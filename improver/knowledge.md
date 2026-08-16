@@ -245,3 +245,30 @@ Top 5 by installs. **No browser skill is currently installed locally** — we re
 - `INSTALL.md` — Updated directory structure, installation scripts, and documentation
 
 **Architecture reference**: Based on NousResearch Hermes Agent (see `powerhouse3.md` in project root).
+
+---
+
+## Think-Before-Act, Goal Alignment, Playwright & Understand-Anything Knowledge Graph Upgrade (2026-08-16)
+
+**What changed**: Upgraded the PowerHous3 multi-agent architecture with 4 core systemic capabilities:
+
+1. **Think Before Act Protocol**:
+   - Compulsory planning cycle (Analyze & Hypothesize $\rightarrow$ Consult Prior Knowledge & Knowledge Graph $\rightarrow$ Formulate Step-by-Step Plan $\rightarrow$ Define Verification Criteria) before executing modifications or tools.
+
+2. **Goal-Oriented Execution Framework**:
+   - Structured alignment model:
+     - **Goal**: Clear overarching objective and success metric.
+     - **Task**: Actionable, discrete sub-steps.
+     - **Context**: User domain, environment, active dependencies.
+     - **Constraints**: Token budgets, tool permissions, safety boundaries.
+
+3. **Web Search, Web Fetch & Playwright Automation Stack**:
+   - Native headless browser automation (`agent-browser` + Playwright) for dynamic web applications, `@eN` token-efficient DOM snapshots, screenshot verifications, and real-time research.
+
+4. **Understand-Anything & Knowledge Graph Self-Improvement Engine**:
+   - Deterministic AST parsing (Tree-sitter across 36 languages) with zero-LLM token overhead and zero hallucination risk.
+   - Dual-layer edge provenance: `EXTRACTED` (factual syntax) vs `INFERRED` (semantic connections).
+   - Multi-agent compilation (`project-scanner`, `file-analyzer`, `architecture-analyzer`, `tour-builder`, `graph-reviewer`) creating `.ua/knowledge-graph.json`.
+   - Closed learning loop: `save-result` (work memory) $\rightarrow$ `reflect` $\rightarrow$ `LESSONS.md` + `.graphify_learning.json` (`preferred`, `tentative`, `contested`) with automatic `"code changed — re-verify"` cache invalidation on code drift.
+   - Multi-modal ingestion via Microsoft MarkItDown (`markitdown`) converting 15+ formats (PDFs, PPTX, XLSX, audio, images with OCR) into clean Markdown.
+

@@ -138,6 +138,11 @@ Each skill tracks the following metadata for Curator lifecycle management:
 | Skill Name | Provenance | Status | Created | Levels |
 |---|---|---|---|---|
 | `sample-skill` | agent-created | active | 2026-08-15 | L0, L1 |
+| `llm-council` | user-created | active | 2026-08-16 | L0, L1 |
+| `graphify` | agent-created | active | 2026-08-16 | L0, L1 |
+| `markitdown` | agent-created | active | 2026-08-16 | L0, L1 |
+| `understand-anything` | agent-created | active | 2026-08-16 | L0, L1 |
+| `playwright` | agent-created | active | 2026-08-16 | L0, L1 |
 
 ### Curator Lifecycle Rules
 - Skills unused for 30 days → `stale` (still loadable, flagged for review)
