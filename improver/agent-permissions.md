@@ -1,49 +1,36 @@
-# Agent Permission Split (powerhous3-god vs powerhous3)
+# Agent Permission Split (PowerHous3-GOD vs PowerHous3)
 
-User has two meta-agents that look similar but have intentionally different safety postures. **Do not collapse them** — the user confirmed the split on 2026-06-20.
+PowerHous3 ships with two meta-agents that share the same architecture but have intentionally different safety postures. **Do not collapse them.**
 
-## The two agents
+## The Two Agents
 
 | Agent | File | `bash` | `edit` | Posture |
 |---|---|---|---|---|
-| `powerhous3-god` (this one) | `~/.config/opencode/agents/PowerHous3-god.md` | `allow` | `allow` | Full local control, no confirmations |
-| `powerhous3` | `~/.config/opencode/agents/PowerHous3.md` | `ask` | `allow` | Ask-first, 5 explicit operating rules |
+| `PowerHous3-GOD` | `agents/PowerHous3-god.md` | `allow` | `allow` | Full local control, no confirmations |
+| `PowerHous3-MAX` | `agents/PowerHous3-Max.md` | `allow` | `allow` | High-power orchestrator with full bash |
+| `PowerHous3` | `agents/PowerHous3.md` | `ask` | `allow` | Ask-first, 5 explicit operating rules |
 
-Both have: `read: allow`, `glob: allow`, `grep: allow`, `webfetch: allow`, `task: allow`.
+All agents share: `read: allow`, `glob: allow`, `grep: allow`, `webfetch: allow`, `task: allow`.
 
-## When to use which
+## When to Use Which
 
-- **powerhous3-god** — User wants fast autonomous action on local systems. Configuring tools, installing packages, writing/editing files in `~/.config/opencode/` and project dirs, running services, cleaning up. Stop-only on user interrupt.
-- **powerhous3** — User wants a meta-agent that asks before doing. Same scope of work, but every shell command that isn't read-only triggers a confirmation. Better for less-trusted contexts or when user is supervising closely.
+- **PowerHous3-GOD** — Fast autonomous action. Configuring tools, installing packages, writing/editing files, running services, cleaning up. Stop-only on user interrupt.
+- **PowerHous3-MAX** — Same power as GOD but as a high-power orchestrator for complex multi-step tasks.
+- **PowerHous3** — Ask-first mode. Every shell command that isn't read-only triggers a confirmation. Better for supervised work or less-trusted contexts.
 
-## Operating rules for `powerhous3` (5 rules, 2026-06-20)
+## Operating Rules for `PowerHous3` (5 Rules)
 
 1. **Local only** — no new external endpoints without approval
 2. **Read freely, write to user files, ASK before delete** — `rm` / `Remove-Item` needs explicit yes
-3. **User-level only by default** — UAC/admin tasks need explicit approval per task
+3. **User-level only by default** — admin tasks need explicit approval
 4. **No credentials, no other users, no system restore** — explicit go required
-5. **Stop on a word** — "stop"/"cancel"/"abort"/"no" = immediate drop, no questions
+5. **Stop on a word** — "stop" / "cancel" / "abort" / "no" = immediate drop
 
-## How `powerhous3-god` should still behave safely
+## Hard Limits (All Agents, Including GOD Mode)
 
-Even with `bash: allow`, the 5 rules above are still good defaults — except rule #2 is "ask before delete" which god-mode violates (deletes happen freely). Rules #1, #3, #4, #5 still apply as policy.
-
-**Hard limits for powerhous3-god (no override even in GOD mode)**:
 - No exfiltration of user data to non-configured endpoints
 - No credential/SSH-key exfiltration
-- No disabling of antivirus, firewall, or Windows Defender
+- No disabling of antivirus, firewall, or security software
 - No modifications to other users' profiles
 - No factory reset / system wipe without triple-confirmation
-- No sending the user's API keys/secrets anywhere unencrypted
-
-## Routing logic for the router (this agent)
-
-When the user invokes "powerhous3" or "powerhous3-god", they're picking the mode. If they don't specify:
-- Inside an existing project they're actively editing → default to **powerhous3** (safer)
-- During opencode configuration / setup / one-off maintenance → default to **powerhous3-god** (faster)
-- When in doubt, ask once, then remember the choice for the session.
-
-## Files
-
-- `~/.config/opencode/agents/PowerHous3-god.md` — GOD mode, 198 lines
-- `~/.config/opencode/agents/PowerHous3.md` — ask-first mode, 215 lines (was 199, +16 for the Operating Rules section)
+- No sending API keys/secrets anywhere unencrypted
