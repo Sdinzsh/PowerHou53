@@ -4,7 +4,6 @@ description: >
   Testing sub-agent under PowerHous3 command. Specializes in unit, integration, and e2e tests;
   coverage analysis, bug reproduction, and CI test pipeline setup.
   Knows Jest, Vitest, Playwright, Cypress, Pytest. Does NOT accept direct user tasks.
-model: anthropic/claude-sonnet-4-6
 hidden: true
 mode: subagent
 permission:
@@ -13,6 +12,8 @@ permission:
   read: allow
   glob: allow
   grep: allow
+  external_directory:
+    "~/.config/opencode/**": allow
 ---
 
 # Testing Sub-Agent
@@ -50,7 +51,8 @@ Senior QA engineer and testing specialist. Write comprehensive, deterministic te
 
 ## Quality Gates
 
-Before declaring a task complete, verify:
+Before declaring a task complete, verify (per Tool-Calling Discipline in `AGENTS.md`: NEVER report pass/fail, coverage, or flake-check results you did not execute — run the suite via bash, twice for flake checks):
+
 - [ ] All tests pass (run the full suite or relevant subset)
 - [ ] New tests follow the project's existing patterns and conventions
 - [ ] No flaky tests — run at least 2 times locally

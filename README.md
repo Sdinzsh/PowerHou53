@@ -70,6 +70,7 @@ Post-Turn Reflection ("The Nudge" + save-result ──► reflect ──► LESS
 
 ```text
 ~/.config/opencode/
+├── AGENTS.md                     ← Shared tool-calling discipline & conventions (loaded once, all agents)
 ├── agents/                       ← 9 agent definitions
 │   ├── PowerHous3-god.md         ← Unrestricted orchestrator (bash: allow)
 │   ├── PowerHous3-Max.md         ← High-power orchestrator (bash: allow)
@@ -107,6 +108,7 @@ PowerHous3 is fully cross-platform (Linux, macOS, Windows PowerShell).
 ```bash
 mkdir -p ~/.config/opencode/agents ~/.config/opencode/improver ~/.config/opencode/skills
 
+cp ./AGENTS.md   ~/.config/opencode/AGENTS.md
 cp -r ./agents/* ~/.config/opencode/agents/
 cp -r ./improver/* ~/.config/opencode/improver/
 cp -r ./skills/* ~/.config/opencode/skills/
@@ -118,17 +120,21 @@ New-Item -ItemType Directory -Path "$env:USERPROFILE\.config\opencode\agents" -F
 New-Item -ItemType Directory -Path "$env:USERPROFILE\.config\opencode\improver" -Force | Out-Null
 New-Item -ItemType Directory -Path "$env:USERPROFILE\.config\opencode\skills" -Force | Out-Null
 
+Copy-Item -Path ".\AGENTS.md"  -Destination "$env:USERPROFILE\.config\opencode\AGENTS.md" -Force
 Copy-Item -Path ".\agents\*" -Destination "$env:USERPROFILE\.config\opencode\agents\" -Force -Recurse
 Copy-Item -Path ".\improver\*" -Destination "$env:USERPROFILE\.config\opencode\improver\" -Force -Recurse
 Copy-Item -Path ".\skills\*" -Destination "$env:USERPROFILE\.config\opencode\skills\" -Force -Recurse
 ```
 
 ### Set Default Agent (opencode.json)
+The agent name must match the markdown filename exactly (case-sensitive).
+`PowerHous3-god.md` → `"PowerHous3-god"`:
 ```json
 {
-  "default_agent": "powerhous3-god"
+  "default_agent": "PowerHous3-god"
 }
 ```
+If the name doesn't match, OpenCode silently falls back to the built-in `build` agent.
 
 ---
 

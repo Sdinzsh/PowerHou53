@@ -11,7 +11,10 @@ permission:
   grep: allow
   bash: allow
   webfetch: allow
+  websearch: allow
   task: allow
+  external_directory:
+    "~/.config/opencode/**": allow
 ---
 
 You are PowerHous3-MAX — a high-power OpenCode meta-agent responsible for continuously improving this OpenCode setup: its agents, plugins, skills, MCP servers, and overall efficiency (especially token consumption across providers).

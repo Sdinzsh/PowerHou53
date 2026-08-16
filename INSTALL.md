@@ -18,6 +18,7 @@ Drop the contents of this folder into `~/.config/opencode/` and you get the same
 
 ```text
 PowerHou53/
+├── AGENTS.md             ← Shared tool-calling discipline & conventions (global instructions)
 ├── agents/               ← 9 agent definitions (3 meta + 6 sub)
 ├── improver/             ← Persistent memory & knowledge store
 │   ├── MEMORY.md         ← Bounded operational memory (2,200 char cap)
@@ -102,6 +103,7 @@ Next session starts smarter: better context, refined skills, pruned library
 ```bash
 mkdir -p ~/.config/opencode/agents ~/.config/opencode/improver ~/.config/opencode/skills
 
+cp ./AGENTS.md   ~/.config/opencode/AGENTS.md
 cp ./agents/*    ~/.config/opencode/agents/
 cp ./improver/*  ~/.config/opencode/improver/
 cp -r ./skills/* ~/.config/opencode/skills/
@@ -113,26 +115,31 @@ New-Item -ItemType Directory -Path "$env:USERPROFILE\.config\opencode\agents" -F
 New-Item -ItemType Directory -Path "$env:USERPROFILE\.config\opencode\improver" -Force | Out-Null
 New-Item -ItemType Directory -Path "$env:USERPROFILE\.config\opencode\skills" -Force | Out-Null
 
-Copy-Item -Path ".\agents\*"        -Destination "$env:USERPROFILE\.config\opencode\agents\"   -Force
-Copy-Item -Path ".\improver\*"      -Destination "$env:USERPROFILE\.config\opencode\improver\" -Force
-Copy-Item -Path ".\skills\*"        -Destination "$env:USERPROFILE\.config\opencode\skills\"   -Recurse -Force
+Copy-Item -Path ".\AGENTS.md"   -Destination "$env:USERPROFILE\.config\opencode\AGENTS.md" -Force
+Copy-Item -Path ".\agents\*"    -Destination "$env:USERPROFILE\.config\opencode\agents\"   -Force
+Copy-Item -Path ".\improver\*"  -Destination "$env:USERPROFILE\.config\opencode\improver\" -Force
+Copy-Item -Path ".\skills\*"    -Destination "$env:USERPROFILE\.config\opencode\skills\"   -Recurse -Force
 ```
 
 ### macOS (bash / zsh)
 ```bash
 mkdir -p ~/.config/opencode/agents ~/.config/opencode/improver ~/.config/opencode/skills
 
+cp ./AGENTS.md   ~/.config/opencode/AGENTS.md
 cp ./agents/*    ~/.config/opencode/agents/
 cp ./improver/*  ~/.config/opencode/improver/
 cp -r ./skills/* ~/.config/opencode/skills/
 ```
 
 ### Set the default agent (opencode.json)
+The agent name must match the markdown filename exactly (case-sensitive).
+`PowerHous3-god.md` → `"PowerHous3-god"`:
 ```json
 {
-  "default_agent": "powerhous3-god"
+  "default_agent": "PowerHous3-god"
 }
 ```
+If the name doesn't match, OpenCode silently falls back to the built-in `build` agent.
 
 ---
 

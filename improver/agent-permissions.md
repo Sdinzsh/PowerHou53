@@ -1,8 +1,8 @@
-# Agent Permission Split (PowerHous3-GOD vs PowerHous3)
+# Agent Permission Split (PowerHous3-GOD vs PowerHous3-MAX vs PowerHous3)
 
-PowerHous3 ships with two meta-agents that share the same architecture but have intentionally different safety postures. **Do not collapse them.**
+PowerHous3 ships with three meta-agents that share the same core architecture and the shared rules in `AGENTS.md` (global instructions, loaded once) but have intentionally different safety postures and charters. **Do not collapse the permission split.**
 
-## The Two Agents
+## The Three Meta-Agents
 
 | Agent | File | `bash` | `edit` | Posture |
 |---|---|---|---|---|
@@ -10,7 +10,9 @@ PowerHous3 ships with two meta-agents that share the same architecture but have 
 | `PowerHous3-MAX` | `agents/PowerHous3-Max.md` | `allow` | `allow` | High-power orchestrator with full bash |
 | `PowerHous3` | `agents/PowerHous3.md` | `ask` | `allow` | Ask-first, 5 explicit operating rules |
 
-All agents share: `read: allow`, `glob: allow`, `grep: allow`, `webfetch: allow`, `task: allow`.
+All meta-agents share: `read: allow`, `glob: allow`, `grep: allow`, `webfetch: allow`, `websearch: allow`, `task: allow`, plus `external_directory: { "~/.config/opencode/**": allow }` so the improver memory store and skills library are readable/writable from any project worktree without approval stalls.
+
+Sub-agents (backend, frontend, general, testing, explore, hermes) have no `task` rule — OpenCode denies `task` for subagents unless explicitly permitted, which enforces the no-re-delegation design. `explore` additionally enforces its read-only charter with `edit: deny` and only read-only bash patterns allowed.
 
 ## When to Use Which
 

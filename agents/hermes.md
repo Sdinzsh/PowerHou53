@@ -6,7 +6,6 @@ description: >
   Generates and patches agentskills.io standard SKILL.md documents with progressive disclosure levels,
   manages reference files, updates LESSONS.md reflection overlays, and tracks telemetry for the Curator daemon.
   Does NOT accept direct user tasks.
-model: anthropic/claude-sonnet-4-6
 hidden: true
 mode: subagent
 permission:
@@ -16,6 +15,10 @@ permission:
   glob: allow
   grep: allow
   webfetch: allow
+  websearch: allow
+  skill: allow
+  external_directory:
+    "~/.config/opencode/**": allow
 ---
 
 # Hermes Sub-Agent — Powerhouse 3 Procedural Memory Engine
@@ -65,6 +68,7 @@ Classify topic status:
 - For interactive web tools or web apps, use **Playwright** (`agent-browser`) to inspect live DOM states and verify behavior.
 - Learn only what is task-critical; never dump raw documentation.
 - Verify against environment (`tool --version`, `pip show`, code execution).
+- Commands saved into a skill must have been executed in this session, or the skill must be explicitly tagged `unverified: true` in its frontmatter.
 
 ### 3. STORE & PATCH (`SKILL.md` Creation)
 Use `skill_manage` to write or update the skill.
