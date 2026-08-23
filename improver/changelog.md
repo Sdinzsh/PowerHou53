@@ -1,5 +1,52 @@
 # Change Log
 
+## 2026-08-23 — Final pre-push audit (full re-read of all files)
+- Removed duplicated sentence fragment in all 3 meta-agents' Real-Time Project Adaptation (residue from the earlier scripted reorder).
+- explore.md: aligned prior-knowledge step with role-scoped protocol (task spec + graph-if-exists instead of memory reads).
+- INSTALL.md feature bullet rewritten honestly (curator as convention, session-end logging); MEMORY.md graph guidance aligned with native-search-first speed rule.
+- Verified end-to-end: 37 files, all frontmatters spec-compliant, no stale terminology outside dated historical entries, sub-agent permission allowlists intact.
+
+## 2026-08-23 — Finalization pass (full-file audit before GitHub publish)
+- Fixed comma-splice grammar bug in all 3 meta-agents ("PROJECT.md`, Create/update" → "PROJECT.md`. Create/update").
+- Resolved contradiction: "Real-Time Project Adaptation" ordered PROJECT.md creation FIRST while the milestone policy de-blocked it — reordered to scan → compare → override → write PROJECT.md at milestone/session end.
+- INSTALL.md loop diagram rewritten to actual mechanics (native `skill` tool, proportional protocol, graph-only-if-exists, batched end-of-session logging); removed retired "Level 0/1", "The Nudge" fork, "~3k tokens" claims; agents table updated ("Memory/skill-aware" → "Spec-driven").
+- README pillars aligned: proportional protocol wording, milestone-based PROJECT.md, session-start/end diagram terms.
+- token-audit.md strategy #3 updated to native skill loading; knowledge.md 2026-08-15 Safety Gates entry annotated as convention-not-config-key.
+- Verified: vendor graphify frontmatter spec-compliant; no stale terms remain outside dated historical entries; all frontmatter YAML-valid; live install re-synced.
+
+## 2026-08-23 — Toolchain installation added (graphify, markitdown, playwright/agent-browser)
+- **Installed on machine**: `graphifyy` v0.9.48 via uv (CLI `graphify`); registered vendor OpenCode skill + plugin hook (`graphify install --platform opencode`) which replaced the bundled hand-written graphify SKILL.md with the canonical one; `markitdown` v0.1.7 via uv with individual format extras; agent-browser v0.34.0 already present.
+- **Ecosystem skills installed** to `~/.agents/skills/` per find-skills procedure (quality-verified): `microsoft/playwright-cli@playwright-cli` (128K installs) and `vercel-labs/agent-browser`. Both are OpenCode-discoverable, no name collisions.
+- **INSTALL.md**: new "Set the toolchain" section with verified commands, PATH notes (`uv tool update-shell`), the `graphifyy` double-y PyPI gotcha, the broken `markitdown[all]` pin workaround (#2179), and duplicate-skill-name warning for graphify.
+- **plugins.md**: three dated toolchain entries registered.
+
+## 2026-08-23 — Performance pass: fix end-to-end slowness on real projects
+Root causes addressed (ceremony tax, approval stalls, step exhaustion, over-delegation):
+- **Proportional protocol** (`AGENTS.md`): added Execution Speed Rules — fast path for trivial actions (no planning cycle), batch independent tool calls into single turns, no re-reading known context, Knowledge Graph only when the graph file already exists and the question is structural (never build unprompted; native search fallback), verification at milestones not micro-edits, logging batched once at session end.
+- **Step caps raised**: GOD 35→60, MAX 30→50, safe 25→40. Old caps forced mid-task summarization → restarts → perceived incompleteness/slowness on long turns.
+- **Approval stalls removed from sub-agents** (backend/frontend/general/testing): `bash: ask` → patterned allowlist for read-only commands (`ls`, `cat`, `head/tail/wc`, `grep`/`rg`, `tree`, read-only git). Destructive/unknown commands still ask. Per-project loosening documented in agent-permissions.md.
+- **Dispatch protocol slimmed** in all editing sub-agents: dropped mandatory MEMORY.md/skills round-trip per dispatch (spec carries conventions); added batching + one-shot completion guidance; telemetry reporting moved to dispatcher.
+- **Meta-agent routing hardened**: dispatched specs must be self-contained (paths, constraints, acceptance criteria) so subagents don't re-explore; independent tasks dispatch in parallel.
+- **PROJECT.md de-blocked**: created/updated at milestones or session end, never blocking active work.
+- **Skill index weight cut**: llm-council description trimmed ~1010→~330 chars (it is always-in-context via `<available_skills>`; full methodology remains in body).
+
+## 2026-08-23 — Logic hardening pass (verified against opencode.ai docs)
+- **Fictional tools removed**: `skill_manage`, `skill_view`, `skills_list` do not exist in OpenCode. All operative prompts now use the native `skill` tool (`skill({ name })` loads a body; `<available_skills>` is the index) plus plain file operations (write/edit) for creating/patching `SKILL.md`. Affected: `AGENTS.md`, `agents/hermes.md`, `INSTALL.md`, `improver/skills.md`, `skills/sample-skill/`.
+- **Frontmatter compliance**: OpenCode only recognizes `name`, `description`, `license`, `compatibility`, `metadata`; unknown fields are silently ignored. Moved `category`/`tags`/`verified`/`provenance` into the `metadata` map across all 6 skills so telemetry actually survives loading.
+- **Role-scoped memory protocol**: session-start reads and improver appends were mandated for every agent, but subagent sessions build fresh context per dispatch — parallel subagents appending to shared logs would race and duplicate. Now scoped: primaries read/write the store; sub-agents consume dispatcher task specs only.
+- **Step-budget sanity**: mandatory session-start reads cut from 7 files to 4 (`MEMORY.md`, `USER.md`, `knowledge.md`, changelog skim); `plugins.md`/`skills.md`/`token-audit.md` now load on demand. Prevents routers (steps 25–35) burning ~8 steps on housekeeping before real work.
+- **Delegation heuristic** added to all 3 meta-agents (delegate when domain-specific AND substantial; direct handling for trivial cross-cutting tweaks) — prevents over-delegation overhead.
+- **PROJECT.md threshold**: creation now triggers on substantive work (first edit/install/multi-step task), not one-off Q&A.
+- **Accuracy fixes**: char↔token math corrected (2,200 chars ≈ ~550 tokens; 1,375 ≈ ~350); FTS5 recall and write-approval gates re-labeled as convention/roadmap rather than shipped features; `bash: ask` on sub-agents documented as intentional supervised autonomy in agent-permissions.md.
+
+## 2026-08-23 — MAJOR: Deduplication & weight reduction pass
+- **Shared engine extracted to `AGENTS.md`**: The ~200-line Universal Protocol (Think-Before-Act, Goal/Task/Context/Constraints framing, Web/Playwright stack, KG engine, bounded memory store, skills conventions) was duplicated verbatim across all 3 meta-agents. It now lives once in `AGENTS.md` (loaded globally for every session per OpenCode docs); meta-agent files keep only frontmatter + identity + mode-specific policy.
+  - `PowerHous3-god.md`: 267 → ~90 lines; `PowerHous3-Max.md`: 267 → ~90 lines; `PowerHous3.md`: 280 → ~100 lines. Net repo: ~480 duplicated lines removed (~17% of total). Mode-specific confirmation language (GOD/MAX apply-directly vs ask-first) preserved verbatim in each file's responsibilities sections.
+- **README.md**: improver tree listed 7 of the 9 shipped files — added `session-handoff.md` and `agent-permissions.md`.
+- **INSTALL.md**: merged byte-identical Linux/macOS install sections into one; normalized all copy commands to `cp -r` / `-Recurse` (was mixed `cp` vs `cp -r`, inconsistent with README).
+- **improver/MEMORY.md**: replaced stale `madar pack` reference (tool not part of this stack) with `graphify query`.
+- **Correction note**: the 2026-08-16 entry below references a `walkthrough.md` that was never shipped in this package — treat that filename as void.
+
 ## 2026-08-16 — Tool-calling & permission fixes across agent configs
 - **external_directory allow (all 9 agents)**: Added `external_directory: { "~/.config/opencode/**": allow }`. Without it, every read/write of the improver store or skills library from inside a project worktree hit the default `ask` gate, stalling the mandated session-start memory reads and post-action appends.
 - **websearch: allow (3 meta-agents)**: Prompts feature Web Search as a core capability but the permission key was absent (only worked via permissive defaults; a stricter global config would silently disable it).

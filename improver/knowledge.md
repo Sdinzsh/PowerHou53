@@ -40,7 +40,7 @@
 
 **4 Subsystems Deployed:**
 1. **Bounded Memory Store** — `MEMORY.md` (max 2,200 chars, ~800 tokens) + `USER.md` (max 1,375 chars, ~500 tokens). Frozen snapshot at session start preserves prefix caching. Hard overflow forces inline consolidation.
-2. **Progressive Disclosure Skills System** — Skills stored as `SKILL.md` under `skills/<name>/` conforming to `agentskills.io` standard. 3-level loading: Level 0 index (~3k tokens), Level 1 full skill (on-demand), Level 2 references/scripts (deep-demand). `skill_manage` tool with `create`, `patch`, `edit`, `delete`, `write_file`, `remove_file` actions.
+2. **Progressive Disclosure Skills System** — Skills stored as `SKILL.md` under `skills/<name>/` conforming to `agentskills.io` standard, discovered natively by OpenCode. Loading: frontmatter index always in context (`<available_skills>`), full body on demand via the native `skill` tool, references/scripts read on demand. *(2026-08-23 correction: original text referenced a `skill_manage` tool that does not exist in OpenCode — skills are created/patched with plain file operations.)*
 3. **Post-Turn Background Review** — Auxiliary fork replays conversation digest after turns, proposes memory writes or skill patches. Notification badges (`💾 Memory updated` / `💾 Skill patched`). Configurable `write_approval` gates stage writes in `pending/` for review.
 4. **Autonomous Curator Daemon** — Tracks usage telemetry (views, patches, last-used). Deterministic lifecycle: `active` → `stale` (30d unused) → `archived` (90d, moved to `skills/.archive/`). Optional LLM consolidation pass merges overlapping micro-skills into umbrella skills. Pinned skills exempt.
 
@@ -50,6 +50,8 @@
 - `memory.write_approval` — stages memory writes for `/memory pending` review
 - `skills.write_approval` — stages skill writes for `/skills pending` + `/skills diff` + `/skills approve`
 - `skills.guard_agent_created` — heuristic scanner for dangerous patterns in agent-created skills
+
+*(2026-08-23 correction: these are conventions of this architecture, not OpenCode config keys — OpenCode has no such settings. Implement them as manual staging in `pending/` when desired; see AGENTS.md "Bounded Memory Store".)*
 
 ---
 

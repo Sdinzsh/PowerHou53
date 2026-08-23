@@ -6,9 +6,9 @@ This package gives you a customized OpenCode installation with:
 - **6 sub-agents** for delegating specialized work (backend, frontend, explore, general, testing, hermes)
 - **A Deterministic Knowledge Graph & Comprehension Engine** (Understand-Anything + Graphify AST with Tree-sitter)
 - **A Multi-Modal Ingestion Pipeline** (Microsoft MarkItDown for PDFs, PPTX, XLSX, audio, images with OCR)
-- **A Closed Learning Loop** system with bounded memory, progressive disclosure skills, background review, reflection overlays (`LESSONS.md`), and an autonomous curator
+- **A Closed Learning Loop**: bounded memory, on-demand skill loading, session-end batched logging, `graphify` reflection overlays (`LESSONS.md`), and a curator convention for skill lifecycle (`active → stale → archived`)
 - **An improver memory system** that logs patterns, decisions, plugins, skills, and token usage across sessions
-- **A mandatory PROJECT.md living document** created in every project root (`.opencode/PROJECT.md`) detailing directory structure, tech stack, work progress log, architecture notes, active tasks, and learnings
+- **A PROJECT.md living document** per project (`.opencode/PROJECT.md`) detailing directory structure, tech stack, work progress log, architecture notes, active tasks, and learnings — written at milestones, never blocking active work
 
 Drop the contents of this folder into `~/.config/opencode/` and you get the same setup.
 
@@ -18,7 +18,7 @@ Drop the contents of this folder into `~/.config/opencode/` and you get the same
 
 ```text
 PowerHou53/
-├── AGENTS.md             ← Shared tool-calling discipline & conventions (global instructions)
+├── AGENTS.md             ← Shared tool-calling discipline & Powerhouse 3 Universal Protocol (global instructions)
 ├── agents/               ← 9 agent definitions (3 meta + 6 sub)
 ├── improver/             ← Persistent memory & knowledge store
 │   ├── MEMORY.md         ← Bounded operational memory (2,200 char cap)
@@ -47,22 +47,24 @@ PowerHou53/
 | `PowerHous3-god.md` | Default meta-agent. Full local control, no confirmations (`bash: allow`). Full planning & KG engine. |
 | `PowerHous3-Max.md` | High-power meta-agent variant (`bash: allow`). Full planning & KG engine. |
 | `PowerHous3.md` | Ask-first meta-agent (`bash: ask`). 5 user safety rules. Full planning & KG engine. |
-| `backend.md` | Sub-agent for APIs, auth, server-side logic. Memory/skill-aware. |
-| `frontend.md` | Sub-agent for UI/UX, React/Vue/etc. Memory/skill-aware. |
-| `general.md` | Sub-agent for cross-domain tasks. Memory/skill-aware. |
+| `backend.md` | Sub-agent for APIs, auth, server-side logic. Spec-driven; loads skills on demand. |
+| `frontend.md` | Sub-agent for UI/UX, React/Vue/etc. Spec-driven; loads skills on demand. |
+| `general.md` | Sub-agent for cross-domain tasks. Spec-driven; loads skills on demand. |
 | `testing.md` | Sub-agent for unit/integration/e2e tests & Playwright validation. |
 | `explore.md` | Sub-agent for codebase exploration & Understand-Anything AST graph traversal. |
 | `hermes.md` | Procedural memory engine — learns tools/libs, generates `SKILL.md` documents & reflection overlays. |
 
 ### skills/ (progressive disclosure library)
 
-Skills follow the `agentskills.io` open standard with 3-level loading:
+Skills follow the `agentskills.io` open standard as implemented by OpenCode's native `skill` tool:
 
 | Level | What loads | When | Token cost |
 |---|---|---|---|
-| **Level 0 (Index)** | YAML frontmatter: name, description, tags | Always in context | ~3k tokens for full index |
-| **Level 1 (Procedure)** | Full `SKILL.md` body | On-demand when task matches | Variable per skill |
-| **Level 2 (References)** | Files under `references/`, `scripts/`, `templates/` | Only when specific sub-steps need deep detail | Variable per file |
+| **Index** | Frontmatter `name` + `description` (only these are auto-listed) | Always in context (`<available_skills>`) | Small per skill |
+| **Procedure** | Full `SKILL.md` body | On demand via `skill({ name })` when the task matches | Variable per skill |
+| **References** | Plain files under `references/`, `scripts/`, `templates/` | Only when a specific step needs deep detail — read with the read tool | Variable per file |
+
+Only `name`, `description`, `license`, `compatibility`, and `metadata` frontmatter fields are recognized; provenance/status/dates live in the `metadata` map.
 
 ---
 
@@ -71,42 +73,42 @@ Skills follow the `agentskills.io` open standard with 3-level loading:
 ```text
 Session starts
    ↓
-Agent reads MEMORY.md + USER.md + knowledge.md (frozen prompt snapshot)
+Primary agent batch-reads MEMORY.md + USER.md + knowledge.md in one turn
+(sub-agents skip this — they consume the dispatcher's task spec)
    ↓
-Loads Level 0 skill index into context (~3k tokens)
+Skill index is always in context (<available_skills>); bodies load on demand via skill({ name })
    ↓
-Task arrives → Think Before Act & Goal/Task/Context/Constraints Framing
+Task arrives → proportional protocol:
+  trivial edit → act, then verify          non-trivial → Think Before Act + Goal framing
    ↓
-Knowledge Graph Consultation (.ua/knowledge-graph.json or graphify-out/)
+Structural question & graph exists? → graphify query / path / explain
+otherwise → native glob/grep (graph never built unprompted)
    ↓
-Loads matching skill at Level 1 (on-demand) → executes task with Web/Playwright verification
+Substantial specialist work → self-contained Task dispatches (parallel where independent)
    ↓
-Post-Turn Background Review ("The Nudge" + save-result → reflect)
-   ├── Forks auxiliary agent to replay conversation digest
-   ├── Updates LESSONS.md and .graphify_learning.json overlay (preferred/tentative/contested)
-   ├── Displays: 💾 Memory updated / 💾 Skill patched
-   └── If write_approval enabled → stages in pending/ for review
+Execution with milestone verification (tests/lint/build/browser at checkpoints)
    ↓
-Autonomous Curator (periodic, inactivity-triggered)
-   ├── Tracks skill telemetry (views, patches, last-used)
-   ├── active → stale (30 days) → archived (90 days)
-   └── Optional: LLM consolidation pass merges overlapping skills
+Session end: one batched log write (changelog/knowledge/plugins) +
+PROJECT.md refresh; optional graphify save-result for reusable lessons
    ↓
-Next session starts smarter: better context, refined skills, pruned library
+Curator convention (manual/on-demand): telemetry in improver/skills.md,
+active → stale (30d) → archived (90d); pinned skills exempt
+   ↓
+Next session starts smarter: better context, refined skills
 ```
 
 ---
 
 ## Install
 
-### Linux (bash / zsh)
+### Linux & macOS (bash / zsh)
 ```bash
 mkdir -p ~/.config/opencode/agents ~/.config/opencode/improver ~/.config/opencode/skills
 
 cp ./AGENTS.md   ~/.config/opencode/AGENTS.md
-cp ./agents/*    ~/.config/opencode/agents/
-cp ./improver/*  ~/.config/opencode/improver/
-cp -r ./skills/* ~/.config/opencode/skills/
+cp -r ./agents/*   ~/.config/opencode/agents/
+cp -r ./improver/* ~/.config/opencode/improver/
+cp -r ./skills/*   ~/.config/opencode/skills/
 ```
 
 ### Windows (PowerShell)
@@ -121,14 +123,45 @@ Copy-Item -Path ".\improver\*"  -Destination "$env:USERPROFILE\.config\opencode\
 Copy-Item -Path ".\skills\*"    -Destination "$env:USERPROFILE\.config\opencode\skills\"   -Recurse -Force
 ```
 
-### macOS (bash / zsh)
-```bash
-mkdir -p ~/.config/opencode/agents ~/.config/opencode/improver ~/.config/opencode/skills
+### Set the toolchain (graphify, markitdown, playwright/agent-browser)
 
-cp ./AGENTS.md   ~/.config/opencode/AGENTS.md
-cp ./agents/*    ~/.config/opencode/agents/
-cp ./improver/*  ~/.config/opencode/improver/
-cp -r ./skills/* ~/.config/opencode/skills/
+The skills in `skills/` drive three external tools. Install them once:
+
+**1. Graphify — knowledge graph CLI** (PyPI package is `graphifyy`, double-y; the command is `graphify`):
+```bash
+uv tool install graphifyy          # or: pipx install graphifyy  (Python 3.10+)
+uv tool update-shell               # if `graphify` isn't found afterwards
+graphify --version
+
+# Register graphify's official OpenCode skill + query-first plugin:
+graphify install --platform opencode
+```
+Note: this replaces the bundled `skills/graphify/SKILL.md` with the vendor-maintained version and adds a `references/` sidecar — keep only one `graphify` skill (duplicate names break skill discovery). It also writes a project-local `.opencode/plugins/graphify.js` + `.opencode/opencode.json` in the directory where you run it.
+
+**2. MarkItDown — multi-format → Markdown ingestion** (Microsoft). Avoid `'markitdown[all]'` for now — its `youtube-transcript-api~=1.0.0` pin is unsatisfiable on PyPI; install format extras individually:
+```bash
+uv tool install "markitdown[pdf,docx,pptx,xlsx]"   # add ,youtube-transcription if needed
+echo "# hi" | markitdown                           # smoke test
+```
+
+**3. Playwright / agent-browser — browser automation**. The `playwright` skill drives Vercel's native Rust CLI (`agent-browser`); Playwright libraries are only needed for scripted test suites:
+```bash
+npm install -g agent-browser       # native CLI (or: brew install agent-browser)
+agent-browser install              # downloads Chrome for Testing (first time only)
+agent-browser doctor               # verify
+
+# optional: Python Playwright for scripted suites
+pip install pytest-playwright && playwright install chromium
+```
+
+Optional companion skills from the open ecosystem (verified high-trust sources, installed to `~/.agents/skills/`, discovered by OpenCode automatically). To discover more, run the find-skills flow and follow its generated instructions (it searches skills.sh, verifies install counts/source reputation, then installs with `npx skills add <owner/repo@skill> -g -y`):
+```bash
+npx skills use "https://github.com/vercel-labs/skills" --skill "find-skills"
+```
+Pre-verified picks for this stack:
+```bash
+npx skills add "microsoft/playwright-cli@playwright-cli" -g -y   # 128K+ installs, Microsoft
+npx skills add "vercel-labs/agent-browser" -g -y                 # official Vercel skill
 ```
 
 ### Set the default agent (opencode.json)

@@ -12,8 +12,8 @@
 - **Savings**: ~71.5x token reduction per query vs reading full file contents.
 
 ### 3. Progressive Disclosure Skills
-- **Pattern**: Level 0 frontmatter loaded into index (~3k tokens total). Full SKILL.md loaded only on-demand.
-- **Savings**: Prevents loading all skill content into every session context.
+- **Pattern**: Frontmatter (`name`/`description`) always in context via `<available_skills>`. Full SKILL.md body loaded only on demand via `skill({ name })`; references read per-step.
+- **Savings**: Prevents loading all skill bodies into every session context.
 
 ### 4. Bounded Memory
 - **MEMORY.md**: Hard cap 2,200 chars (~800 tokens). Frozen at session start.

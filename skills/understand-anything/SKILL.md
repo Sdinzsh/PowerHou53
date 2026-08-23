@@ -1,10 +1,11 @@
 ---
 name: understand-anything
 description: "Transform any codebase into an interactive knowledge graph using Tree-sitter AST and LLM semantic analysis with Understand-Anything by Egonex-AI. Includes web dashboard, diff-impact analysis, and graph-grounded chat."
-category: exploration
-tags: [knowledge-graph, ast, architecture, understand-anything, diff-impact, visualization]
-verified: 2026-08-16
-provenance: agent-created
+metadata:
+  category: exploration
+  tags: knowledge-graph,ast,architecture,understand-anything,diff-impact,visualization
+  verified: "2026-08-16"
+  provenance: agent-created
 ---
 
 # Understand-Anything Skill

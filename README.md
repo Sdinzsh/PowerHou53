@@ -6,12 +6,12 @@ PowerHous3 is an enterprise-grade, **Closed Learning Loop** AI architecture buil
 
 ## 🌟 Core Pillars & Capabilities
 
-### 1. 🧭 Think Before Act & Planning Protocol
-Every meta-agent and specialist sub-agent adheres to a strict multi-step reasoning protocol before executing tool calls or code modifications:
+### 1. 🧭 Proportional Think-Before-Act Protocol
+Agents act immediately on trivial, reversible edits and run a strict multi-step reasoning cycle only for non-trivial work (multi-file changes, installs, anything hard to reverse):
 - **Analyze & Hypothesize**: Evaluate intent, system state, and root causes.
-- **Consult Prior Knowledge**: Inspect `MEMORY.md`, `USER.md`, `knowledge.md`, and query the Knowledge Graph.
+- **Consult Prior Knowledge**: Inspect `MEMORY.md`, `USER.md`, `knowledge.md`, and query the Knowledge Graph when one exists.
 - **Formulate Step-by-Step Plan**: Outline sub-tasks and tool sequences with zero ambiguity.
-- **Define Verification Criteria**: Establish test criteria (unit tests, linting, Playwright runs, diffs) before running code.
+- **Define Verification Criteria**: Establish test criteria (unit tests, linting, browser runs, diffs) before executing.
 
 ### 2. 🎯 Goal-Oriented Execution Framework
 All tasks are framed through the 4 foundational pillars:
@@ -34,8 +34,8 @@ Equipped with dynamic web exploration and native headless browser automation (`a
 - **Automatic Drift Invalidation**: Flags modified code with `"code changed — re-verify"`.
 - **Multi-Modal MarkItDown Ingestion**: Converts PDFs, Word, PPTX, Excel, Audio, and Video into clean Markdown before graph indexing.
 
-### 5. 📋 Mandatory PROJECT.md Living Document
-Every project automatically receives and maintains a `.opencode/PROJECT.md` file:
+### 5. 📋 PROJECT.md Living Document
+Every project under active development receives and maintains a `.opencode/PROJECT.md` file (written at the first milestone — never blocking work):
 - **Project Structure**: High-level map of key directories and entry points.
 - **Tech Stack**: Table detailing language, framework, database, build tools, and versions.
 - **Work Progress**: Dated append-only log of tasks, modified files, and completion statuses.
@@ -46,7 +46,7 @@ Every project automatically receives and maintains a `.opencode/PROJECT.md` file
 ## 🔄 The 6-Stage Self-Improving Loop
 
 ```
-Session Start (Frozen Context: MEMORY.md + USER.md + Level 0 Skills)
+Session Start (batched reads: MEMORY.md + USER.md + knowledge.md; skill index always in context)
    │
    ▼
 Task Arrival ──► Think Before Act & Goal/Task/Context/Constraints Framing
@@ -61,7 +61,7 @@ Specialized Delegation (Meta-Agent ──► backend | frontend | explore | test
 Execution & Verification (AST Navigation + Web/Playwright Validation)
    │
    ▼
-Post-Turn Reflection ("The Nudge" + save-result ──► reflect ──► LESSONS.md + Curator Lifecycle)
+Session-End Reflection (batched logging + save-result ──► LESSONS.md; Curator convention: telemetry → stale → archived)
 ```
 
 ---
@@ -70,7 +70,7 @@ Post-Turn Reflection ("The Nudge" + save-result ──► reflect ──► LESS
 
 ```text
 ~/.config/opencode/
-├── AGENTS.md                     ← Shared tool-calling discipline & conventions (loaded once, all agents)
+├── AGENTS.md                     ← Shared tool-calling discipline & Powerhouse 3 Universal Protocol (loaded once, all agents)
 ├── agents/                       ← 9 agent definitions
 │   ├── PowerHous3-god.md         ← Unrestricted orchestrator (bash: allow)
 │   ├── PowerHous3-Max.md         ← High-power orchestrator (bash: allow)
@@ -81,14 +81,16 @@ Post-Turn Reflection ("The Nudge" + save-result ──► reflect ──► LESS
 │   ├── general.md                ← Cross-domain & infrastructure
 │   ├── hermes.md                 ← Procedural memory & skill creation
 │   └── testing.md                ← Test pipelines & Playwright automation
-├── improver/                     ← Persistent knowledge-graph store
+├── improver/                     ← Bounded memory & audit store
 │   ├── MEMORY.md                 ← Bounded operational memory (2,200 char cap)
 │   ├── USER.md                   ← Bounded dialectic user profile (1,375 char cap)
 │   ├── knowledge.md              ← Durable architectural learnings
 │   ├── skills.md                 ← Skills telemetry & progressive registry
 │   ├── changelog.md              ← Immutable audit log
 │   ├── plugins.md                ← MCP/Plugin states
-│   └── token-audit.md            ← Token efficiency logs
+│   ├── token-audit.md            ← Token efficiency logs
+│   ├── session-handoff.md        ← Compressed cross-session state snapshots
+│   └── agent-permissions.md      ← Meta-agent permission split & safety notes
 └── skills/                       ← Progressive disclosure library (agentskills.io)
     ├── understand-anything/      ← Codebase AST knowledge graph & dashboard
     ├── playwright/               ← Headless browser automation & testing
@@ -138,12 +140,60 @@ If the name doesn't match, OpenCode silently falls back to the built-in `build` 
 
 ---
 
-## 🛡️ Safety Gates & Write Approvals
+## 🔧 Toolchain Setup (graphify · markitdown · playwright)
 
-PowerHous3 provides configurable guardrails:
-- **`memory.write_approval`**: Stages memory updates in `pending/` for `/memory pending` review.
-- **`skills.write_approval`**: Stages skill patches for `/skills pending`, `/skills diff`, and `/skills approve`.
-- **Heuristic Guard**: Prevents untrusted scripts from injecting malicious terminal commands.
+The bundled skills drive three external tools. Install them once after copying the files:
+
+### 1. Graphify — Knowledge Graph CLI
+> PyPI package is **`graphifyy`** (double-y). The command is `graphify`.
+
+```bash
+uv tool install graphifyy          # or: pipx install graphifyy  (Python 3.10+)
+uv tool update-shell               # only if `graphify` isn't found afterwards
+graphify install --platform opencode   # registers vendor skill + query-first plugin
+```
+⚠️ This replaces the bundled `skills/graphify/SKILL.md` with the vendor-canonical version. Keep exactly one `graphify` skill installed — duplicate names break OpenCode's skill discovery.
+
+### 2. MarkItDown — Multi-Format → Markdown Ingestion (Microsoft)
+```bash
+uv tool install "markitdown[pdf,docx,pptx,xlsx]"   # add ,youtube-transcription if needed
+echo "# smoke test" | markitdown
+```
+⚠️ Avoid `'markitdown[all]'` for now — its `youtube-transcript-api~=1.0.0` pin is unsatisfiable on PyPI ([microsoft/markitdown#2179](https://github.com/microsoft/markitdown/pull/2179)). Install format extras individually.
+
+### 3. Playwright / agent-browser — Browser Automation
+The `playwright` skill drives Vercel's native Rust CLI:
+```bash
+npm install -g agent-browser       # or: brew install agent-browser
+agent-browser install              # downloads Chrome for Testing (first run)
+agent-browser doctor               # verify the installation
+
+# optional, for scripted test suites:
+pip install pytest-playwright && playwright install chromium
+```
+
+### Optional companion skills from the open ecosystem
+Verified high-trust sources; install to `~/.agents/skills/` (OpenCode discovers them automatically). To discover more, run the find-skills flow and follow its instructions:
+```bash
+npx skills use "https://github.com/vercel-labs/skills" --skill "find-skills"
+```
+Pre-verified picks for this stack:
+```bash
+npx skills add "microsoft/playwright-cli@playwright-cli" -g -y   # Microsoft · 128K+ installs
+npx skills add "vercel-labs/agent-browser" -g -y                 # Vercel official
+```
+
+See [`INSTALL.md`](INSTALL.md) → *"Set the toolchain"* for platform notes and troubleshooting.
+
+---
+
+## 🛡️ Safety Gates & Conventions
+
+PowerHous3's safety posture comes from layered design rather than a single gate:
+- **Permission splits** — GOD/MAX (`bash: allow`) vs ask-first variant (`bash: ask`); sub-agents get read-only bash allowlists with everything else gated (see [`improver/agent-permissions.md`](improver/agent-permissions.md)).
+- **Write-approval convention** — when enabled, memory/skill updates stage in `pending/` for review before landing.
+- **Role-scoped memory** — only primary agents read/write the improver store; parallel sub-agents never race on shared logs.
+- **Heuristic guard** — agent-created skills are scanned for dangerous patterns before adoption.
 
 ---
 *See [`INSTALL.md`](INSTALL.md) for detailed verification commands, sample prompts, and operator guides.*

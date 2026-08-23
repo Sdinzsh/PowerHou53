@@ -1,10 +1,11 @@
 ---
 name: playwright
 description: "Browser automation, web testing, dynamic scraping, and visual verification using Playwright and agent-browser CLI. Supports DOM snapshots with @eN element references, form interactions, and screenshot validations."
-category: automation
-tags: [playwright, browser-automation, testing, webfetch, websearch, scraping]
-verified: 2026-08-16
-provenance: agent-created
+metadata:
+  category: automation
+  tags: playwright,browser-automation,testing,webfetch,websearch,scraping
+  verified: "2026-08-16"
+  provenance: agent-created
 ---
 
 # Playwright & Browser Automation Skill

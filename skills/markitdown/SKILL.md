@@ -1,10 +1,11 @@
 ---
 name: markitdown
 description: "Convert multi-format documents (PDF, DOCX, PPTX, XLSX, images, audio, video, HTML, ZIP) into token-efficient Markdown using Microsoft MarkItDown for LLM ingestion and knowledge graph indexing."
-category: ingestion
-tags: [markitdown, parsing, pdf, ocr, audio, markdown, ingestion]
-verified: 2026-08-16
-provenance: agent-created
+metadata:
+  category: ingestion
+  tags: markitdown,parsing,pdf,ocr,audio,markdown,ingestion
+  verified: "2026-08-16"
+  provenance: agent-created
 ---
 
 # MarkItDown Multi-Modal Ingestion Engine

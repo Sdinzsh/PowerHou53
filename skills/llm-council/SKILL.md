@@ -1,10 +1,11 @@
 ---
 name: llm-council
-description: "Run any question, idea, or decision through a council of 5 AI advisors who independently analyze it, peer-review each other anonymously, and synthesize a final verdict. Based on Karpathy's LLM Council methodology. MANDATORY TRIGGERS: 'council this', 'run the council', 'war room this', 'pressure-test this', 'stress-test this', 'debate this'. STRONG TRIGGERS (use when combined with a real decision or tradeoff): 'should I X or Y', 'which option', 'what would you do', 'is this the right move', 'validate this', 'get multiple perspectives', 'I can't decide', 'I'm torn between'. Do NOT trigger on simple yes/no questions, factual lookups, or casual 'should I' without a meaningful tradeoff (e.g. 'should I use markdown' is not a council question). DO trigger when the user presents a genuine decision with stakes, multiple options, and context that suggests they want it pressure-tested from multiple angles."
-category: workflow
-tags: [decision-making, agents, powerhouse3, council]
-verified: 2026-08-16
-provenance: user-created
+description: "Run a decision through 5 independent AI advisors (Contrarian, First Principles, Expansionist, Outsider, Executor) that peer-review anonymously and synthesize a verdict. Trigger on 'council this', 'pressure-test this', 'war room this', or any high-stakes either/or choice. Skip for factual lookups, summaries, or simple creation tasks. Full methodology in body."
+metadata:
+  category: workflow
+  tags: decision-making,agents,powerhouse3,council
+  verified: "2026-08-16"
+  provenance: user-created
 ---
 
 # LLM Council

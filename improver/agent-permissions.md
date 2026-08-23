@@ -1,6 +1,6 @@
 # Agent Permission Split (PowerHous3-GOD vs PowerHous3-MAX vs PowerHous3)
 
-PowerHous3 ships with three meta-agents that share the same core architecture and the shared rules in `AGENTS.md` (global instructions, loaded once) but have intentionally different safety postures and charters. **Do not collapse the permission split.**
+PowerHous3 ships with three meta-agents that share the Powerhouse 3 Universal Protocol defined once in `AGENTS.md` (global instructions, loaded for every session) but have intentionally different safety postures and charters. Meta-agent files contain only their frontmatter, identity, and mode-specific policy — never duplicate protocol content. **Do not collapse the permission split.**
 
 ## The Three Meta-Agents
 
@@ -12,7 +12,9 @@ PowerHous3 ships with three meta-agents that share the same core architecture an
 
 All meta-agents share: `read: allow`, `glob: allow`, `grep: allow`, `webfetch: allow`, `websearch: allow`, `task: allow`, plus `external_directory: { "~/.config/opencode/**": allow }` so the improver memory store and skills library are readable/writable from any project worktree without approval stalls.
 
-Sub-agents (backend, frontend, general, testing, explore, hermes) have no `task` rule — OpenCode denies `task` for subagents unless explicitly permitted, which enforces the no-re-delegation design. `explore` additionally enforces its read-only charter with `edit: deny` and only read-only bash patterns allowed.
+Sub-agents (backend, frontend, general, testing, explore, hermes) have no `task` rule — OpenCode denies `task` for subagents unless explicitly permitted, which enforces the no-re-delegation design. Sub-agent bash uses a **patterned allowlist** (read-only inspection: `ls`, `cat`, `grep`/`rg`, `git status|log|diff|show|branch`) with everything else still `ask` — this removes constant approval stalls during autonomous runs without granting blanket shell access. Loosen per project as needed via `.opencode/agents/<name>.md` overrides (e.g. `"npm test*": "allow"`). GOD/MAX meta-agents (`bash: allow`) run privileged commands themselves instead of delegating them. `explore` additionally enforces its read-only charter with `edit: deny` and only read-only bash patterns allowed.
+
+Per OpenCode docs, subagent sessions do not inherit a dispatcher's conversation — each Task dispatch builds a fresh context from the task spec plus global rules. That is why memory reads/writes are scoped to primary agents in `AGENTS.md`: parallel subagents appending to shared improver logs would race and duplicate entries.
 
 ## When to Use Which
 

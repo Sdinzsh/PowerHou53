@@ -14,17 +14,19 @@ Each skill tracks the following metadata for Curator lifecycle management:
 | `provenance` | enum | `agent-created` \| `user-created` \| `hub-installed` \| `bundled` |
 | `status` | enum | `active` \| `stale` \| `archived` \| `pinned` |
 | `created` | date | Date skill was first created |
-| `last_used` | date | Last date skill was loaded via `skill_view` |
+| `last_used` | date | Last date skill body was loaded via the native `skill` tool |
 | `view_count` | int | Number of times skill was loaded |
-| `patch_count` | int | Number of `skill_manage patch` operations |
+| `patch_count` | int | Number of patch (diff edit) operations on the skill |
 | `stale_after_days` | int | Default: 30. Days of non-use before status → `stale` |
 | `archive_after_days` | int | Default: 90. Days of non-use before status → `archived` |
 
 ### Progressive Disclosure Levels
 
-- **Level 0 (Index)**: YAML frontmatter (`name`, `description`, `category`, `tags`) from `SKILL.md` loaded into global skill index (~3k tokens max).
-- **Level 1 (Main Procedure)**: Full `SKILL.md` loaded on-demand via `skill_view(name)` when a matching task is executing.
-- **Level 2 (Reference Assets)**: Sub-files under `references/`, `templates/`, `scripts/` loaded via `skill_view(name, path)` only when specific sub-steps require deep detail.
+- **Index**: Frontmatter `name` + `description` auto-listed by OpenCode's native `skill` tool (`<available_skills>`); only `name`, `description`, `license`, `compatibility`, `metadata` frontmatter fields are recognized.
+- **Procedure**: Full `SKILL.md` loaded on demand via `skill({ name })` when a matching task is executing.
+- **References**: Sub-files under `references/`, `templates/`, `scripts/` read with the read tool only when specific sub-steps require deep detail.
+
+Skills are created/patched by editing their `SKILL.md` directly (small diffs preferred over rewrites). Telemetry below is maintained manually/conventionally in this registry.
 
 ### Registered Skills
 
