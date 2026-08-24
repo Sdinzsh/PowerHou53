@@ -50,10 +50,10 @@ Session Start (batched reads: MEMORY.md + USER.md + knowledge.md; skill index al
    │
    ▼
 Task Arrival ──► Think Before Act & Goal/Task/Context/Constraints Framing
-   │
+   │                ▲ violation echo on first bash call (loop-guardian plugin)
    ▼
 Knowledge Graph Consultation (.ua/knowledge-graph.json & graphify-out/)
-   │
+   │                ▲ staleness surfaced via .needs_update marker
    ▼
 Specialized Delegation (Meta-Agent ──► backend | frontend | explore | testing | hermes | general)
    │
@@ -62,43 +62,64 @@ Execution & Verification (AST Navigation + Web/Playwright Validation)
    │
    ▼
 Session-End Reflection (batched logging + save-result ──► LESSONS.md; Curator convention: telemetry → stale → archived)
+   │                ▲ deterministic session-log.md append (plugin; no LLM discipline needed)
+   ▼
+Commit Gate (pre-commit: loop_check.py BLOCKS cap overflow / missing artifacts / dead changelog;
+             post-commit: marks graph drift for the next --update)
 ```
 
 ---
 
 ## 📂 Architecture Components
 
+42 files ship in this repo. `AGENTS.md`, `agents/`, `improver/` and `skills/`
+install into `~/.config/opencode/` (see [Installation](#-cross-platform-installation));
+the enforcement kit stays project-local.
+
 ```text
-~/.config/opencode/
-├── AGENTS.md                     ← Shared tool-calling discipline & Powerhouse 3 Universal Protocol (loaded once, all agents)
-├── agents/                       ← 9 agent definitions
-│   ├── PowerHous3-god.md         ← Unrestricted orchestrator (bash: allow)
-│   ├── PowerHous3-Max.md         ← High-power orchestrator (bash: allow)
-│   ├── PowerHous3.md             ← Ask-first safe orchestrator (bash: ask)
-│   ├── backend.md                ← APIs, databases, server logic
-│   ├── explore.md                ← Understand-Anything AST graph explorer
-│   ├── frontend.md               ← UI/UX, components, state management
-│   ├── general.md                ← Cross-domain & infrastructure
-│   ├── hermes.md                 ← Procedural memory & skill creation
-│   └── testing.md                ← Test pipelines & Playwright automation
-├── improver/                     ← Bounded memory & audit store
-│   ├── MEMORY.md                 ← Bounded operational memory (2,200 char cap)
-│   ├── USER.md                   ← Bounded dialectic user profile (1,375 char cap)
-│   ├── knowledge.md              ← Durable architectural learnings
-│   ├── skills.md                 ← Skills telemetry & progressive registry
-│   ├── changelog.md              ← Immutable audit log
-│   ├── plugins.md                ← MCP/Plugin states
-│   ├── token-audit.md            ← Token efficiency logs
-│   ├── session-handoff.md        ← Compressed cross-session state snapshots
-│   └── agent-permissions.md      ← Meta-agent permission split & safety notes
-└── skills/                       ← Progressive disclosure library (agentskills.io)
-    ├── understand-anything/      ← Codebase AST knowledge graph & dashboard
-    ├── playwright/               ← Headless browser automation & testing
-    ├── graphify/                 ← Self-improving reflection & work memory
-    ├── markitdown/               ← Multi-modal media & PDF markdown ingestion
-    ├── llm-council/              ← 5-advisor peer-review decision framework
-    └── sample-skill/             ← Template procedural skill
+<repo-root>/
+├── AGENTS.md                      ← Shared tool-calling discipline & Universal Protocol
+├── agents/                        ← 9 agent definitions
+│   ├── PowerHous3-god.md          ←   Unrestricted meta-orchestrator (bash: allow)
+│   ├── PowerHous3-Max.md          ←   High-power meta-orchestrator (bash: allow)
+│   ├── PowerHous3.md              ←   Ask-first safe meta-orchestrator (bash: ask)
+│   ├── backend.md · frontend.md   ←   Domain specialists (APIs/databases · UI/UX)
+│   ├── explore.md                 ←   Read-only AST knowledge-graph explorer (graphify perms)
+│   ├── testing.md · general.md    ←   Test pipelines · cross-domain coordination
+│   └── hermes.md                  ←   Procedural memory engine & SKILL.md creation
+├── improver/                      ← Bounded memory & audit store
+│   ├── MEMORY.md                  ←   Operational memory (hard cap 2,200 chars)
+│   ├── USER.md                    ←   Dialectic user profile (hard cap 1,375 chars)
+│   ├── knowledge.md               ←   Durable architectural learnings & corrections
+│   ├── changelog.md               ←   Immutable dated audit log
+│   ├── skills.md · plugins.md     ←   Skill telemetry registry · MCP/plugin states
+│   ├── token-audit.md             ←   Token efficiency findings per provider
+│   ├── session-handoff.md         ←   Compressed cross-session state snapshots
+│   ├── agent-permissions.md       ←   Permission split & safety notes
+│   └── session-log.md             ←   (runtime-only: appended by loop-guardian; gitignored)
+├── skills/                        ← Progressive disclosure library (agentskills.io)
+│   ├── graphify/                  ←   Knowledge-graph CLI skill (SKILL.md + references/ ×8)
+│   ├── understand-anything/       ←   Codebase AST knowledge graph & dashboard
+│   ├── playwright/                ←   Headless browser automation & testing
+│   ├── markitdown/                ←   Multi-modal media/PDF → Markdown ingestion
+│   ├── llm-council/               ←   5-advisor peer-review decision framework
+│   └── sample-skill/              ←   Template procedural skill
+├── scripts/
+│   └── loop_check.py              ← Deterministic loop validator: memory caps,
+│                                    artifact presence, changelog liveness, drift detection
+├── .githooks/                     ← activate once: git config core.hooksPath .githooks
+│   ├── pre-commit                 ←   HARD gate — blocks violating commits (exit 1)
+│   └── post-commit                ←   Marks knowledge-graph drift (.needs_update)
+└── .opencode/
+    ├── package.json               ← ESM module marker for first-party plugin
+    └── plugins/loop-guardian.js   ← First-bash violation echo + deterministic
+                                     session.idle appends to improver/session-log.md
 ```
+
+**Generated at runtime (gitignored, per-machine):** `graphify-out/`
+(`graph.json`, `GRAPH_REPORT.md`, `reflections/LESSONS.md`, `memory/`,
+`cost.json`), `.ua/`, `pending/`, `.opencode/node_modules/`, and vendor
+`.opencode/plugins/graphify.js` — recreated via `graphify install --platform opencode`.
 
 ---
 
