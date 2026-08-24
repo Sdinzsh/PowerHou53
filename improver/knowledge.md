@@ -1,5 +1,21 @@
 # Knowledge Base
 
+## Closed-Loop Enforcement Tooling (2026-08-24)
+
+The 2026-08-23 note below ("conventions, not config keys") remains true for OpenCode
+settings, but the loop is now enforced by repo-local code instead of prompt discipline:
+
+- `scripts/loop_check.py` — deterministic gate (memory caps, `graph.json` + `LESSONS.md`
+  presence, changelog ≤14d liveness, graph-drift detection → `.needs_update`). Wired as a
+  hard pre-commit hook via `.githooks/` + `git config core.hooksPath .githooks`.
+- `.opencode/plugins/loop-guardian.js` — first-bash violation echo + `session.idle`
+  appends to `improver/session-log.md`.
+- In-repo knowledge graph built (`graphify-out/graph.json`, 51 nodes / 62 edges) and
+  lessons compiled (`graphify-out/reflections/LESSONS.md`) — the "query only if exists"
+  protocol is now active in this workspace.
+
+---
+
 ## Session Handoff Protocol (2026-06-20)
 
 **Problem**: Long sessions accumulate 15-40 KB of context that gets re-billed on every follow-up message. Plus the full transcript lives in `~/.local/share/opencode/opencode.db` indefinitely.

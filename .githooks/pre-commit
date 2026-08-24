@@ -1,0 +1,6 @@
+#!/bin/sh
+# PowerHous3 pre-commit hook — HARD gate for the closed learning loop.
+# Blocks commits that violate bounded-memory caps or break learning-loop
+# artifacts. This converts AGENTS.md protocol conventions into enforced rules.
+ROOT="$(git rev-parse --show-toplevel)"
+exec python3 "$ROOT/scripts/loop_check.py" "$@"

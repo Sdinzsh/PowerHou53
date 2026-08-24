@@ -187,3 +187,32 @@ After restarting, try these prompts with your agent:
 - *"Run /understand-diff to inspect the ripple effect of our recent edits."*
 
 If the agent uses the knowledge graph, goal framing, and bounded memory to answer, your upgraded Powerhouse 3 setup is fully operational.
+
+---
+
+## Enable the hard loop gates (optional, recommended)
+
+The closed learning loop ships with code-enforced guardrails. To activate them in a repo:
+
+```bash
+# 1. Deterministic validator (memory caps, graph.json + LESSONS.md presence,
+#    changelog liveness, knowledge-graph drift detection)
+python3 scripts/loop_check.py                # run manually anytime
+python3 scripts/loop_check.py --strict-stale # treat graph drift as fatal
+
+# 2. Wire as git hooks (pre-commit blocks violations; post-commit marks drift)
+git config core.hooksPath .githooks
+
+# 3. loop-guardian plugin — auto-loads from .opencode/plugins/ in any OpenCode
+#    session started in this repo; echoes violations on the first bash call and
+#    appends deterministic records to improver/session-log.md.
+```
+
+Notes:
+- The pre-commit gate only *blocks* on hard violations (cap overflow, missing
+  artifacts, dead changelog). Graph drift warns by default and sets
+  `graphify-out/.needs_update`; clear it with `graphify --update`.
+- Build your per-project graph first (`/graphify <path>`), or remove the
+  artifact checks from `scripts/loop_check.py` if you don't use graphify.
+- `improver/session-log.md` is machine-local (gitignored) by design.
+

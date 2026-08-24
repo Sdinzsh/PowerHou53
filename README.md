@@ -194,6 +194,9 @@ PowerHous3's safety posture comes from layered design rather than a single gate:
 - **Write-approval convention** — when enabled, memory/skill updates stage in `pending/` for review before landing.
 - **Role-scoped memory** — only primary agents read/write the improver store; parallel sub-agents never race on shared logs.
 - **Heuristic guard** — agent-created skills are scanned for dangerous patterns before adoption.
+- **Hard loop gates** — `scripts/loop_check.py` runs as a pre-commit hook (`core.hooksPath=.githooks`), blocking commits on memory-cap overflow, missing `graph.json`/`LESSONS.md`, or a stale changelog; `.githooks/post-commit` marks graph drift (`.needs_update`) and the `loop-guardian` plugin (`.opencode/plugins/`) echoes violations on the session's first bash call and appends deterministic records to `improver/session-log.md`.
 
 ---
 *See [`INSTALL.md`](INSTALL.md) for detailed verification commands, sample prompts, and operator guides.*
+
+

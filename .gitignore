@@ -1,0 +1,25 @@
+# Machine-local artifacts (created by graphify install / local runs)
+# .opencode: ignore everything EXCEPT our first-party plugin + module marker
+# (graphify.js itself is vendor-managed — recreated by `graphify install --platform opencode`)
+.opencode/*
+!.opencode/plugins/
+.opencode/plugins/*
+!.opencode/plugins/loop-guardian.js
+!.opencode/package.json
+graphify-out/
+.ua/
+pending/
+
+# OS / editor noise
+.DS_Store
+Thumbs.db
+*.swp
+*~
+
+# Runtime caches
+node_modules/
+__pycache__/
+*.pyc
+
+# Loop-guardian runtime log (machine-appended, per-machine)
+improver/session-log.md

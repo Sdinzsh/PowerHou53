@@ -46,3 +46,11 @@ This file tracks MCP server plugins configured in `opencode.json`. Update this f
 - **Source**: vercel-labs/agent-browser v0.34.0; skills `vercel-labs/agent-browser` + `microsoft/playwright-cli@playwright-cli` (128K+ installs) via `npx skills add ... -g`
 - **Status**: enabled
 - **Notes**: drives the `playwright` skill's automation commands; `agent-browser install` downloads Chrome for Testing.
+
+## 2026-08-24 — loop-guardian (project plugin)
+- **Type**: local OpenCode plugin (`.opencode/plugins/loop-guardian.js`)
+- **Command**: auto-loaded by OpenCode from `.opencode/plugins/`; pairs with `scripts/loop_check.py` + `.githooks/` (`core.hooksPath`)
+- **Behavior**: first-bash audit echo (MEMORY/USER caps, graph.json + LESSONS.md presence, source-vs-graph staleness) and deterministic `session.idle` append to `improver/session-log.md`
+- **Auth**: none (fs-only)
+- **Status**: enabled
+- **Notes**: makes session-end logging and drift surfacing mechanical instead of convention-driven; violations mirror what pre-commit blocks on.

@@ -1,0 +1,15 @@
+#!/bin/sh
+# PowerHous3 post-commit hook — deterministic graph-drift signal.
+# Marks the knowledge graph for refresh when commit contents are newer than
+# graph.json (cheap; full rebuild happens via `graphify --update` / next session's
+# reflect --if-stale flow). For auto-rebuild-on-commit instead, run:
+#   graphify hook install
+ROOT="$(git rev-parse --show-toplevel)"
+if [ -f "$ROOT/graphify-out/graph.json" ]; then
+  NEWEST_SRC=$(find "$ROOT/agents" "$ROOT/improver" "$ROOT/skills" \
+                -name '*.md' -newer "$ROOT/graphify-out/graph.json" 2>/dev/null | head -1)
+  if [ -n "$NEWEST_SRC" ] || [ "$ROOT/AGENTS.md" -nt "$ROOT/graphify-out/graph.json" ]; then
+    touch "$ROOT/graphify-out/.needs_update"
+    echo "[loop-guardian] knowledge graph marked stale (graphify-out/.needs_update) - run: graphify --update"
+  fi
+fi

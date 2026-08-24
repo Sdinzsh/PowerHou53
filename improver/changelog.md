@@ -1,5 +1,19 @@
 # Change Log
 
+## 2026-08-24 — Pre-push audit & verification (GitHub readiness)
+- **Push inventory fixed**: `.gitignore` negations ship first-party `.opencode/plugins/loop-guardian.js` + `.opencode/package.json` while vendor `graphify.js`, `node_modules`, locks stay machine-local; nested `.opencode/.gitignore` adjusted accordingly. 42 files / ~408K total.
+- **E2E gate proof**: deliberate over-cap MEMORY.md → real `git commit` blocked with exit=1 and FAIL line, zero commits created; restore → loop_check OK. Strict-stale fail path re-verified (rc=1).
+- **Graph integrity after splices**: 69 nodes; query "what enforces the learning loop" correctly traverses loop_check.py / loop-guardian.js nodes.
+- **INSTALL.md**: new "Enable the hard loop gates" section for repo consumers (validator usage, hooksPath wiring, plugin auto-load notes).
+- **Secrets/personal-path scan**: clean across all shippable files.
+
+## 2026-08-24 — Closed-loop enforcement: graph built, lessons compiled, conventions hardened
+- **Knowledge Graph built in-repo**: curated-detect graphify pipeline (35 docs + 3 code files; excludes gitignored junk). Final: 65 nodes, 80 edges, 11 communities, 3 hyperedges restored after rebuild, 0 dangling/health flags; includes the new enforcement layer (loop_check gate, git hooks, loop-guardian plugin) as first-class nodes. God nodes: Universal Protocol, Task Dispatch, Graphify CLI, Hermes, Bounded Memory Store. Outputs in `graphify-out/` (`graph.html`, `GRAPH_REPORT.md`, `graph.json`, `manifest.json`, `cost.json`).
+- **Learning loop closed**: 3 `save-result` entries (2 useful, 1 corrected) → `graphify reflect` → `graphify-out/reflections/LESSONS.md` with preferred/tentative/correction tags. Live query verified: "how does the self-improving learning loop work" traversed 31 correct nodes.
+- **Convention → code enforcement**: new `scripts/loop_check.py` (memory caps 2200/1375, artifact presence, changelog liveness ≤14d, graph-drift detection writing `.needs_update`); wired as HARD pre-commit gate via `.githooks/pre-commit` + `git config core.hooksPath .githooks`. `.githooks/post-commit` marks drift. Tested: over-cap MEMORY.md → exit 1 block confirmed.
+- **New plugin** `.opencode/plugins/loop-guardian.js`: deterministic first-bash violation echo + `session.idle` append to `improver/session-log.md` — session-end logging no longer depends on LLM discipline. Violation path tested against fake project. `node --check` clean; `.opencode/package.json` set `"type": "module"`.
+- **Limitation from earlier analysis resolved**: knowledge-graph now exercised here (was absent), LESSONS.md compiled (was missing), self-improvement enforcement is code-backed (was prompt-only convention per 2026-08-23 note).
+
 ## 2026-08-23 — Final pre-push audit (full re-read of all files)
 - Removed duplicated sentence fragment in all 3 meta-agents' Real-Time Project Adaptation (residue from the earlier scripted reorder).
 - explore.md: aligned prior-knowledge step with role-scoped protocol (task spec + graph-if-exists instead of memory reads).
