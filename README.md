@@ -77,7 +77,7 @@ install into `~/.config/opencode/` (see [Installation](#-cross-platform-installa
 the enforcement kit stays project-local.
 
 ```text
-<repo-root>/
+PowerHou53/
 ├── AGENTS.md                      ← Shared tool-calling discipline & Universal Protocol
 ├── agents/                        ← 9 agent definitions
 │   ├── PowerHous3-god.md          ←   Unrestricted meta-orchestrator (bash: allow)
