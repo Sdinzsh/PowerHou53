@@ -17,6 +17,8 @@ permission:
   webfetch: allow
   websearch: allow
   skill: allow
+  task:
+    "*": deny
   external_directory:
     "~/.config/opencode/**": allow
 ---

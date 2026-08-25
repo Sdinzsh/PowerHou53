@@ -1,5 +1,15 @@
 # Change Log
 
+## 2026-08-25 — Enforcement-kit hardening: staged gate, bootstrap-safe, test suite
+- **Critical: staged-bypass closed.** Pre-commit gate previously read the working tree, so staging over-cap content then shrinking the file committed it anyway (reproduced: 5000-char MEMORY.md through a 2200 gate, exit 0). `loop_check.py` now supports `--staged` and reads the git index (`git show :path`); `.githooks/pre-commit` passes `--staged`. Regression test proves a real `git commit` is now blocked.
+- **Critical: bootstrap deadlock fixed.** Fresh clones (graphify-out/ is gitignored) failed the gate on missing `graph.json`/`LESSONS.md`, blocking every commit. These are now WARNINGS by default (per-machine artifacts); promote with `--require-graph`. Memory caps + changelog presence remain HARD on committed content.
+- **Unwired-gate fixed.** `core.hooksPath` was never set, so the "hard gate" never ran. New idempotent `scripts/install_hooks.sh` (wire + chmod + smoke-test); `loop_check.py --check` reports wiring state.
+- **.needs_update one-way latch fixed.** The drift marker was set but never cleared. `loop_check.py` now removes it once sources are no longer newer than graph.json (post-commit delegates to it).
+- **Staleness scope fixed.** Excluded gitignored + runtime files (e.g. `session-log.md`) that made the graph permanently stale; replaced fnmatch (which crossed `/`, matching `__pycache__`) with a segment-aware matcher.
+- **loop-guardian.js hardened.** Shell-escape the injected echo ($, backtick, backslash, quote) to kill command-substitution risk; symlink-cycle + depth guard in `newerThan`; cached audit reused at session end; changelog-liveness now a warning with `LOOP_CHECK_SKIP=1` escape hatch and no-python graceful degrade.
+- **Sub-agents cannot re-delegate.** Added `permission.task: {"*": deny}` to all 6 sub-agents (backend/frontend/general/testing/explore/hermes), enforcing AGENTS.md rule 6 deterministically. Trimmed unused `@opencode-ai/plugin` dep from `.opencode/package.json`.
+- **Tests added (zero deps).** `tests/`: 19 python unittest + 9 `node --test` + 5-assertion shell hook e2e; `tests/run_all.sh` + `.github/workflows/ci.yml`. Ran twice, no flakes.
+
 ## 2026-08-24 — Pre-push audit & verification (GitHub readiness)
 - **Push inventory fixed**: `.gitignore` negations ship first-party `.opencode/plugins/loop-guardian.js` + `.opencode/package.json` while vendor `graphify.js`, `node_modules`, locks stay machine-local; nested `.opencode/.gitignore` adjusted accordingly. 42 files / ~408K total.
 - **E2E gate proof**: deliberate over-cap MEMORY.md → real `git commit` blocked with exit=1 and FAIL line, zero commits created; restore → loop_check OK. Strict-stale fail path re-verified (rc=1).

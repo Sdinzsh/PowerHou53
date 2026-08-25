@@ -72,9 +72,10 @@ Commit Gate (pre-commit: loop_check.py BLOCKS cap overflow / missing artifacts /
 
 ## 📂 Architecture Components
 
-42 files ship in this repo. `AGENTS.md`, `agents/`, `improver/` and `skills/`
-install into `~/.config/opencode/` (see [Installation](#-cross-platform-installation));
-the enforcement kit stays project-local.
+The core kit — `AGENTS.md`, `agents/`, `improver/`, `skills/` — installs into
+`~/.config/opencode/` (see [Installation](#-cross-platform-installation)); the
+enforcement kit (`scripts/`, `.githooks/`, `.opencode/plugins/`, `tests/`)
+stays project-local.
 
 ```text
 PowerHou53/
@@ -87,6 +88,7 @@ PowerHou53/
 │   ├── explore.md                 ←   Read-only AST knowledge-graph explorer (graphify perms)
 │   ├── testing.md · general.md    ←   Test pipelines · cross-domain coordination
 │   └── hermes.md                  ←   Procedural memory engine & SKILL.md creation
+│       (all 6 sub-agents deny the task tool — they cannot re-delegate)
 ├── improver/                      ← Bounded memory & audit store
 │   ├── MEMORY.md                  ←   Operational memory (hard cap 2,200 chars)
 │   ├── USER.md                    ←   Dialectic user profile (hard cap 1,375 chars)
@@ -105,14 +107,21 @@ PowerHou53/
 │   ├── llm-council/               ←   5-advisor peer-review decision framework
 │   └── sample-skill/              ←   Template procedural skill
 ├── scripts/
-│   └── loop_check.py              ← Deterministic loop validator: memory caps,
-│                                    artifact presence, changelog liveness, drift detection
-├── .githooks/                     ← activate once: git config core.hooksPath .githooks
-│   ├── pre-commit                 ←   HARD gate — blocks violating commits (exit 1)
-│   └── post-commit                ←   Marks knowledge-graph drift (.needs_update)
+│   ├── loop_check.py              ← Deterministic loop validator: memory caps,
+│   │                                changelog liveness, artifact presence, drift
+│   │                                (--staged evaluates the index; --check reports wiring)
+│   └── install_hooks.sh           ← Idempotent hook activator (wire + chmod + smoke-test)
+├── tests/                         ← Zero-dependency suite (python unittest + node --test + shell)
+│   ├── test_loop_check.py         ←   Gate behaviour, staged-bypass regression, glob matcher
+│   ├── test_loop_guardian.mjs     ←   Plugin escaping, symlink guard, session-log append
+│   ├── integration_hooks.sh       ←   Real git-commit gate e2e
+│   └── run_all.sh                 ←   Runs all three suites
+├── .githooks/                     ← activate once: sh scripts/install_hooks.sh
+│   ├── pre-commit                 ←   HARD gate on the STAGED index (exit 1); degrades if no python
+│   └── post-commit                ←   Sets/clears knowledge-graph drift (.needs_update)
 └── .opencode/
-    ├── package.json               ← ESM module marker for first-party plugin
-    └── plugins/loop-guardian.js   ← First-bash violation echo + deterministic
+    ├── package.json               ← ESM module marker for the first-party plugin
+    └── plugins/loop-guardian.js   ← First-bash violation echo (shell-escaped) + deterministic
                                      session.idle appends to improver/session-log.md
 ```
 
@@ -215,7 +224,11 @@ PowerHous3's safety posture comes from layered design rather than a single gate:
 - **Write-approval convention** — when enabled, memory/skill updates stage in `pending/` for review before landing.
 - **Role-scoped memory** — only primary agents read/write the improver store; parallel sub-agents never race on shared logs.
 - **Heuristic guard** — agent-created skills are scanned for dangerous patterns before adoption.
-- **Hard loop gates** — `scripts/loop_check.py` runs as a pre-commit hook (`core.hooksPath=.githooks`), blocking commits on memory-cap overflow, missing `graph.json`/`LESSONS.md`, or a stale changelog; `.githooks/post-commit` marks graph drift (`.needs_update`) and the `loop-guardian` plugin (`.opencode/plugins/`) echoes violations on the session's first bash call and appends deterministic records to `improver/session-log.md`.
+- **Hard loop gates** — `scripts/loop_check.py` runs as a pre-commit hook (activate with `sh scripts/install_hooks.sh`, which sets `core.hooksPath=.githooks`). It evaluates the **staged index** (not the working tree), so content cannot be slipped past by shrinking a file after `git add`. Severity model:
+  - **Hard (blocks the commit):** memory-cap overflow and missing `MEMORY.md`/`USER.md`/`changelog.md` — these are committed files, the core invariant.
+  - **Warning by default (bootstrap-safe):** missing `graph.json`/`LESSONS.md` (per-machine, gitignored), stale changelog (mtime is unreliable across clones), and knowledge-graph drift. Promote any of these to hard with `--require-graph`, `--strict-changelog`, or `--strict-stale`.
+  - `.githooks/post-commit` **sets *and clears*** the graph-drift latch (`graphify-out/.needs_update`); the `loop-guardian` plugin (`.opencode/plugins/`, auto-loaded) echoes violations (shell-escaped) on the session's first bash call and appends one deterministic record to `improver/session-log.md` on session idle.
+  - Bypass a single commit explicitly with `LOOP_CHECK_SKIP=1 git commit …` (visible in env, unlike `--no-verify`). If no Python interpreter is present the hook warns and allows the commit rather than blocking all work.
 
 ---
 *See [`INSTALL.md`](INSTALL.md) for detailed verification commands, sample prompts, and operator guides.*

@@ -1,15 +1,33 @@
 #!/bin/sh
 # PowerHous3 post-commit hook — deterministic graph-drift signal.
-# Marks the knowledge graph for refresh when commit contents are newer than
-# graph.json (cheap; full rebuild happens via `graphify --update` / next session's
-# reflect --if-stale flow). For auto-rebuild-on-commit instead, run:
-#   graphify hook install
-ROOT="$(git rev-parse --show-toplevel)"
-if [ -f "$ROOT/graphify-out/graph.json" ]; then
-  NEWEST_SRC=$(find "$ROOT/agents" "$ROOT/improver" "$ROOT/skills" \
-                -name '*.md' -newer "$ROOT/graphify-out/graph.json" 2>/dev/null | head -1)
-  if [ -n "$NEWEST_SRC" ] || [ "$ROOT/AGENTS.md" -nt "$ROOT/graphify-out/graph.json" ]; then
-    touch "$ROOT/graphify-out/.needs_update"
-    echo "[loop-guardian] knowledge graph marked stale (graphify-out/.needs_update) - run: graphify --update"
+#
+# Delegates to scripts/loop_check.py (the single source of truth) so the
+# staleness rule — including gitignored/runtime exclusions and the
+# .needs_update latch clear — stays identical to the pre-commit gate. The
+# worktree run (no --staged) is what sets or clears graphify-out/.needs_update.
+# Never blocks: a post-commit hook's exit status is ignored by git anyway.
+set -u
+
+ROOT=$(git rev-parse --show-toplevel)
+CHECK="$ROOT/scripts/loop_check.py"
+
+[ -f "$CHECK" ] || exit 0
+
+PY=""
+for cand in python3 python py; do
+  if command -v "$cand" >/dev/null 2>&1; then
+    PY="$cand"
+    break
   fi
+done
+
+[ -n "$PY" ] || exit 0
+
+# Worktree mode updates the .needs_update latch; keep output quiet on success.
+"$PY" "$CHECK" >/dev/null 2>&1 || true
+
+if [ -f "$ROOT/graphify-out/.needs_update" ]; then
+  echo "[post-commit] knowledge graph marked stale (graphify-out/.needs_update) - run: graphify --update"
 fi
+
+exit 0

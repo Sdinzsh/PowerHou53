@@ -20,6 +20,8 @@ permission:
     "git show*": allow
   edit: deny
   webfetch: allow
+  task:
+    "*": deny
   external_directory:
     "~/.config/opencode/**": allow
 ---

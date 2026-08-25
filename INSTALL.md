@@ -37,6 +37,14 @@ PowerHou53/
 │   ├── markitdown/          ← Multi-modal media & PDF markdown ingestion
 │   ├── llm-council/         ← 5-advisor peer-review decision framework
 │   └── sample-skill/        ← Template procedural skill
+├── scripts/              ← Enforcement kit (project-local, not copied to ~/.config)
+│   ├── loop_check.py     ← Deterministic loop validator (staged-aware; --check/--json)
+│   └── install_hooks.sh  ← Idempotent git-hook activator
+├── .githooks/            ← pre-commit (staged HARD gate) + post-commit (drift latch)
+├── tests/               ← Zero-dependency suite: run with `sh tests/run_all.sh`
+├── .opencode/plugins/    ← loop-guardian.js (auto-loaded first-party plugin)
+├── .github/workflows/    ← ci.yml (runs the full suite on push/PR)
+├── README.md             ← Architecture overview
 └── INSTALL.md            ← This guide
 ```
 
@@ -195,24 +203,45 @@ If the agent uses the knowledge graph, goal framing, and bounded memory to answe
 The closed learning loop ships with code-enforced guardrails. To activate them in a repo:
 
 ```bash
-# 1. Deterministic validator (memory caps, graph.json + LESSONS.md presence,
-#    changelog liveness, knowledge-graph drift detection)
-python3 scripts/loop_check.py                # run manually anytime
-python3 scripts/loop_check.py --strict-stale # treat graph drift as fatal
+# 1. Deterministic validator (memory caps, changelog liveness, artifact
+#    presence, knowledge-graph drift detection).
+python3 scripts/loop_check.py                # worktree check, anytime
+python3 scripts/loop_check.py --staged       # what a commit would record
+python3 scripts/loop_check.py --require-graph --strict-changelog --strict-stale
+python3 scripts/loop_check.py --check        # is the git hook wired?
 
-# 2. Wire as git hooks (pre-commit blocks violations; post-commit marks drift)
-git config core.hooksPath .githooks
+# 2. Wire the git hooks (idempotent: sets core.hooksPath, chmods, smoke-tests).
+sh scripts/install_hooks.sh                  # preferred
+#   equivalent manual form:
+#   git config core.hooksPath .githooks
 
-# 3. loop-guardian plugin — auto-loads from .opencode/plugins/ in any OpenCode
-#    session started in this repo; echoes violations on the first bash call and
-#    appends deterministic records to improver/session-log.md.
+# 3. loop-guardian plugin auto-loads from .opencode/plugins/ in any OpenCode
+#    session started in this repo (no config entry needed — local plugin dirs
+#    are auto-loaded). It echoes violations on the first bash call and appends
+#    a deterministic record to improver/session-log.md on session idle.
+
+# 4. Run the test suite (zero external deps: python unittest + node --test + sh).
+sh tests/run_all.sh
 ```
 
+Severity model (so the gate is safe to wire without deadlocking a fresh clone):
+
+- **Hard — blocks the commit:** memory-cap overflow, and a missing
+  `MEMORY.md` / `USER.md` / `changelog.md` (these are committed files).
+- **Warning by default:** missing `graph.json` / `LESSONS.md` (per-machine,
+  gitignored), a stale changelog (mtime is unreliable across clones), and
+  knowledge-graph drift. Promote each to hard with `--require-graph`,
+  `--strict-changelog`, `--strict-stale`.
+
 Notes:
-- The pre-commit gate only *blocks* on hard violations (cap overflow, missing
-  artifacts, dead changelog). Graph drift warns by default and sets
-  `graphify-out/.needs_update`; clear it with `graphify --update`.
-- Build your per-project graph first (`/graphify <path>`), or remove the
-  artifact checks from `scripts/loop_check.py` if you don't use graphify.
-- `improver/session-log.md` is machine-local (gitignored) by design.
+- The pre-commit hook evaluates the **staged index**, not the working tree, so
+  over-cap content cannot be slipped past by shrinking the file after `git add`.
+- Graph drift sets `graphify-out/.needs_update`; the next clean run (post-commit
+  or `python3 scripts/loop_check.py`) **clears it automatically** once sources
+  are no longer newer than `graph.json`.
+- Bypass a single commit explicitly with `LOOP_CHECK_SKIP=1 git commit …`.
+  If no Python interpreter is found, the hook warns and allows the commit
+  rather than blocking all work.
+- `improver/session-log.md` is machine-local (gitignored) and is excluded from
+  drift detection so it never latches the graph stale.
 
