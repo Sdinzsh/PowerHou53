@@ -59,8 +59,13 @@ TRACKED_GLOBS = (
     "improver/*.md",
     "skills/**/*.md",
     ".opencode/plugins/*.js",
+    ".opencode/lib/*.mjs",
     "scripts/*.py",
     "scripts/*.sh",
+    "tests/*.py",
+    "tests/*.mjs",
+    "tests/*.sh",
+    ".githooks/*",
 )
 
 # Runtime / per-machine files that legitimately change after the graph is built
@@ -75,7 +80,7 @@ def git(args: list[str]) -> str | None:
     try:
         r = subprocess.run(
             ["git", "-C", str(REPO), *args],
-            capture_output=True, text=True, timeout=15,
+            capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=15,
         )
     except Exception:
         return None
@@ -136,9 +141,9 @@ def git_tracked_sources(exclude_ignored: bool = True) -> list[Path]:
     """
     rels: set[str] = set()
 
-    out = git(["ls-files"])
+    out = git(["ls-files", "-z"])
     if out is not None:
-        for f in out.splitlines():
+        for f in out.split("\0"):
             if matches_tracked(f):
                 rels.add(f.replace("\\", "/"))
 
@@ -146,6 +151,17 @@ def git_tracked_sources(exclude_ignored: bool = True) -> list[Path]:
         for p in REPO.glob(g):
             if p.is_file():
                 rels.add(p.relative_to(REPO).as_posix())
+
+    # A committed deletion is no longer in the index or on disk. Graphify's
+    # optional extraction manifest preserves which sources the graph contains.
+    try:
+        manifest = json.loads((REPO / "graphify-out/manifest.json").read_text(encoding="utf-8"))
+        if isinstance(manifest, dict):
+            for rel in manifest:
+                if not Path(rel).is_absolute() and ".." not in Path(rel).parts and matches_tracked(rel):
+                    rels.add(rel)
+    except (OSError, ValueError):
+        pass
 
     for ex in STALENESS_EXCLUDE:
         rels.discard(ex)
@@ -161,15 +177,16 @@ def git_ignored(rels: list[str]) -> set[str]:
     """Subset of rels that git ignores. Empty set if git is unavailable."""
     try:
         r = subprocess.run(
-            ["git", "-C", str(REPO), "check-ignore", "--stdin"],
-            input="\n".join(rels), capture_output=True, text=True, timeout=15,
+            ["git", "-C", str(REPO), "check-ignore", "-z", "--stdin"],
+            input="\0".join(rels) + "\0", capture_output=True, text=True,
+            encoding="utf-8", errors="replace", timeout=15,
         )
     except Exception:
         return set()
     # check-ignore exits 0 (some ignored), 1 (none), 128 (error)
     if r.returncode not in (0, 1):
         return set()
-    return {line.strip().replace("\\", "/") for line in r.stdout.splitlines() if line.strip()}
+    return {path for path in r.stdout.split("\0") if path}
 
 
 def read_source(rel: str, staged: bool) -> tuple[bool, str]:
@@ -180,14 +197,33 @@ def read_source(rel: str, staged: bool) -> tuple[bool, str]:
     is untracked or staged-for-deletion -> treated as absent.
     """
     if staged:
+        entry = git(["ls-files", "--stage", "--", rel])
+        if not entry or not entry.startswith(("100644 ", "100755 ")):
+            return False, ""
         content = git(["show", f":{rel}"])
         if content is None:
             return False, ""
         return True, content
     p = REPO / rel
-    if p.exists():
-        return True, p.read_text(encoding="utf-8", errors="replace")
+    if p.is_file() and not p.is_symlink():
+        try:
+            return True, p.read_text(encoding="utf-8", errors="replace")
+        except OSError:
+            pass
     return False, ""
+
+
+def hooks_wired() -> bool:
+    hp = git(["config", "--get", "core.hooksPath"])
+    if not hp:
+        return False
+    configured = Path(hp.strip()).expanduser()
+    if not configured.is_absolute():
+        configured = REPO / configured
+    return (configured.resolve() == (REPO / ".githooks").resolve()
+            and all((configured / name).is_file() and os.access(configured / name, os.X_OK)
+                    for name in ("pre-commit", "post-commit"))
+            and (REPO / "scripts/loop_check.py").is_file())
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -207,11 +243,12 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--json", action="store_true",
                     help="emit a machine-readable result")
     args = ap.parse_args(argv)
+    if args.max_changelog_age_days < 0:
+        ap.error("--max-changelog-age-days must be non-negative")
 
     if args.check:
-        hp = git(["config", "--get", "core.hooksPath"])
-        wired = hp is not None and hp.strip() == ".githooks"
-        msg = (".githooks wired (core.hooksPath=.githooks)" if wired
+        wired = hooks_wired()
+        msg = (".githooks wired with executable pre/post-commit hooks" if wired
                else "git hooks NOT wired - run: scripts/install_hooks.sh "
                     "(or: git config core.hooksPath .githooks)")
         if args.json:
@@ -250,8 +287,20 @@ def main(argv: list[str] | None = None) -> int:
         gate(True, f"{cl_rel} missing")
     elif args.max_changelog_age_days > 0:
         cl_path = REPO / cl_rel
-        if cl_path.exists():
-            age = time.time() - cl_path.stat().st_mtime
+        timestamp = None
+        if args.staged:
+            changed = git(["diff", "--cached", "--name-only", "--", cl_rel])
+            committed = git(["log", "-1", "--format=%ct", "--", cl_rel])
+            if changed and changed.strip():
+                timestamp = time.time()
+            elif committed and committed.strip().isdigit():
+                timestamp = int(committed.strip())
+            else:
+                gate(args.strict_changelog, f"{cl_rel} age unknown - cannot verify staged liveness")
+        elif cl_path.is_file():
+            timestamp = cl_path.stat().st_mtime
+        if timestamp is not None:
+            age = time.time() - timestamp
             if age > args.max_changelog_age_days * 86400:
                 gate(args.strict_changelog,
                      f"{cl_rel} older than {args.max_changelog_age_days}d "
@@ -261,11 +310,11 @@ def main(argv: list[str] | None = None) -> int:
     #    HARD only with --require-graph.
     graph = REPO / "graphify-out/graph.json"
     lessons = REPO / "graphify-out/reflections/LESSONS.md"
-    if not graph.exists():
+    if not graph.is_file():
         gate(args.require_graph,
              "graphify-out/graph.json missing - knowledge graph not built "
-             "(run: graphify <path>)")
-    if not lessons.exists():
+             "(use /graphify . in OpenCode)")
+    if not lessons.is_file():
         gate(args.require_graph,
              "graphify-out/reflections/LESSONS.md missing - learning loop not "
              "reflected (run: graphify reflect)")
@@ -273,12 +322,12 @@ def main(argv: list[str] | None = None) -> int:
     # 4. Knowledge-graph drift — worktree mtimes; sets/clears .needs_update.
     #    Skipped for gitignored/runtime sources; latch is cleared when fresh.
     needs_update = REPO / "graphify-out/.needs_update"
-    if graph.exists():
+    if graph.is_file():
         g_mtime = graph.stat().st_mtime
         stale = sorted(
             p.relative_to(REPO).as_posix()
             for p in git_tracked_sources()
-            if p.exists() and p.stat().st_mtime > g_mtime
+            if not p.exists() or p.stat().st_mtime > g_mtime
         )
         if stale:
             try:
@@ -287,8 +336,8 @@ def main(argv: list[str] | None = None) -> int:
                 pass
             eg = ", ".join(stale[:3])
             gate(args.strict_stale,
-                 f"knowledge graph stale: {len(stale)} source(s) newer than "
-                 f"graph.json (e.g. {eg}) - run: graphify --update")
+                 f"knowledge graph stale: {len(stale)} source(s) missing or newer than "
+                 f"graph.json (e.g. {eg}) - use /graphify . --update in OpenCode")
         else:
             # Clear the one-way latch once sources are no longer newer.
             if not args.staged:
@@ -314,8 +363,8 @@ def main(argv: list[str] | None = None) -> int:
             for v in violations:
                 print(f"[loop-check] FAIL: {v}", file=sys.stderr)
         else:
-            print("[loop-check] OK: memory bounds, learning-loop artifacts, "
-                  "changelog liveness all pass")
+            print("[loop-check] OK: no blocking violations"
+                  + (f" ({len(warnings)} warning(s))" if warnings else ""))
 
     return 1 if violations else 0
 

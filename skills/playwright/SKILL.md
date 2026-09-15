@@ -29,7 +29,7 @@ This skill defines procedures for dynamic web research, interactive UI automatio
 
 ---
 
-## Verified Commands (`agent-browser` CLI)
+## Command Examples (`agent-browser` CLI)
 
 ### 1. Open URL and Extract Information
 ```bash
@@ -52,8 +52,8 @@ agent-browser snapshot
 agent-browser click @e3
 
 # Fill input fields
-agent-browser type @e4 "admin@example.com"
-agent-browser type @e5 "SecurePassword123"
+agent-browser fill @e4 "admin@example.com"
+agent-browser fill @e5 "test-password"
 
 # Submit or press key
 agent-browser press Enter
@@ -62,10 +62,10 @@ agent-browser press Enter
 ### 4. Capture Visual Proof (Screenshots)
 ```bash
 # Capture full-page screenshot
-agent-browser screenshot --output out/test-results.png
+agent-browser screenshot --full out/test-results.png
 
 # Capture specific element
-agent-browser screenshot @e2 --output out/header.png
+agent-browser screenshot @e2 out/header.png
 ```
 
 ---

@@ -15,7 +15,8 @@ CHECK="$ROOT/scripts/loop_check.py"
 
 PY=""
 for cand in python3 python py; do
-  if command -v "$cand" >/dev/null 2>&1; then
+  if command -v "$cand" >/dev/null 2>&1 &&
+     "$cand" -c 'import sys; sys.exit(sys.version_info < (3, 10))' >/dev/null 2>&1; then
     PY="$cand"
     break
   fi
@@ -27,7 +28,7 @@ done
 "$PY" "$CHECK" >/dev/null 2>&1 || true
 
 if [ -f "$ROOT/graphify-out/.needs_update" ]; then
-  echo "[post-commit] knowledge graph marked stale (graphify-out/.needs_update) - run: graphify --update"
+  echo "[post-commit] knowledge graph marked stale (graphify-out/.needs_update) - use /graphify . --update in OpenCode"
 fi
 
 exit 0

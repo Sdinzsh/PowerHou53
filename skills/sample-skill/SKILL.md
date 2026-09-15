@@ -22,7 +22,7 @@ metadata:
 
 ## Minimal Code Example
 ```bash
-mkdir -p ~/.config/opencode/skills/<skill-name>/references
+mkdir -p ~/.config/opencode/skills/example-workflow/references
 # then write SKILL.md into that folder with your editor/file tools
 ```
 

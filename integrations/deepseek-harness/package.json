@@ -1,0 +1,9 @@
+{
+  "name": "powerhous3-deepseek-bridge",
+  "private": true,
+  "type": "module",
+  "engines": { "node": "^22.19.0 || >=24.0.0" },
+  "dependencies": {
+    "@deepseek-ai/dsh-sdk-client": "0.1.5-rc.2"
+  }
+}

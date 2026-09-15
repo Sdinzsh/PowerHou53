@@ -10,7 +10,28 @@ This package gives you a customized OpenCode installation with:
 - **An improver memory system** that logs patterns, decisions, plugins, skills, and token usage across sessions
 - **A PROJECT.md living document** per project (`.opencode/PROJECT.md`) detailing directory structure, tech stack, work progress log, architecture notes, active tasks, and learnings — written at milestones, never blocking active work
 
-Drop the contents of this folder into `~/.config/opencode/` and you get the same setup.
+Copy the configuration kit (`AGENTS.md`, `agents/`, `improver/`, `skills/`) as shown below. Keep the enforcement kit project-local. Existing memory files are preserved; back up customized agents and skills before replacing them.
+
+## Install the Powerhouse runtime and Harness bridge
+
+From this checkout, with Node.js 22.19+ (22.x) or 24+, Python 3.10+, Git and bash:
+
+```bash
+npm ci --prefix .opencode
+npm ci --prefix integrations/deepseek-harness
+bash tests/run_all.sh
+node --test tests/integration_opencode.mjs  # requires the opencode executable
+```
+
+Restart OpenCode in this project. It discovers `.opencode/plugins/powerhouse.js`
+and exposes `powerhouse_task`, `powerhouse_verify`, and `powerhouse_harness`.
+The current verification command is `bash tests/run_all.sh`; configure project
+checks in `.opencode/powerhouse.json`. For the model credential, tool usage,
+permission boundary, transfer to another project and rollback, follow the
+[Harness integration guide](integrations/deepseek-harness/README.md).
+
+Both npm installations are required for the full test suite. Production task
+tracking and verification can run with just the `.opencode` dependency install.
 
 ---
 
@@ -41,9 +62,9 @@ PowerHou53/
 │   ├── loop_check.py     ← Deterministic loop validator (staged-aware; --check/--json)
 │   └── install_hooks.sh  ← Idempotent git-hook activator
 ├── .githooks/            ← pre-commit (staged HARD gate) + post-commit (drift latch)
-├── tests/               ← Zero-dependency suite: run with `sh tests/run_all.sh`
-├── .opencode/plugins/    ← loop-guardian.js (auto-loaded first-party plugin)
-├── .github/workflows/    ← ci.yml (runs the full suite on push/PR)
+├── tests/               ← Python, Node, SDK and hook tests: `sh tests/run_all.sh`
+├── integrations/        ← DeepSeek Harness SDK bridge and dependency lockfile
+├── .opencode/plugins/    ← loop-guardian.js and powerhouse.js (auto-loaded)
 ├── README.md             ← Architecture overview
 └── INSTALL.md            ← This guide
 ```
@@ -115,7 +136,11 @@ mkdir -p ~/.config/opencode/agents ~/.config/opencode/improver ~/.config/opencod
 
 cp ./AGENTS.md   ~/.config/opencode/AGENTS.md
 cp -r ./agents/*   ~/.config/opencode/agents/
-cp -r ./improver/* ~/.config/opencode/improver/
+# Seed missing memory files; preserve existing session history on upgrades.
+for source in ./improver/*.md; do
+  destination="$HOME/.config/opencode/improver/${source##*/}"
+  if [ ! -e "$destination" ]; then cp "$source" "$destination"; fi
+done
 cp -r ./skills/*   ~/.config/opencode/skills/
 ```
 
@@ -127,7 +152,10 @@ New-Item -ItemType Directory -Path "$env:USERPROFILE\.config\opencode\skills" -F
 
 Copy-Item -Path ".\AGENTS.md"   -Destination "$env:USERPROFILE\.config\opencode\AGENTS.md" -Force
 Copy-Item -Path ".\agents\*"    -Destination "$env:USERPROFILE\.config\opencode\agents\"   -Force
-Copy-Item -Path ".\improver\*"  -Destination "$env:USERPROFILE\.config\opencode\improver\" -Force
+Get-ChildItem ".\improver\*.md" | ForEach-Object {
+  $destination = Join-Path "$env:USERPROFILE\.config\opencode\improver" $_.Name
+  if (-not (Test-Path $destination)) { Copy-Item $_.FullName $destination }
+}
 Copy-Item -Path ".\skills\*"    -Destination "$env:USERPROFILE\.config\opencode\skills\"   -Recurse -Force
 ```
 
@@ -146,7 +174,7 @@ graphify install --platform opencode
 ```
 Note: this replaces the bundled `skills/graphify/SKILL.md` with the vendor-maintained version and adds a `references/` sidecar — keep only one `graphify` skill (duplicate names break skill discovery). It also writes a project-local `.opencode/plugins/graphify.js` + `.opencode/opencode.json` in the directory where you run it.
 
-**2. MarkItDown — multi-format → Markdown ingestion** (Microsoft). Avoid `'markitdown[all]'` for now — its `youtube-transcript-api~=1.0.0` pin is unsatisfiable on PyPI; install format extras individually:
+**2. MarkItDown — multi-format → Markdown ingestion** (Microsoft). Install format extras individually to limit dependencies; [upstream documentation](https://github.com/microsoft/markitdown#optional-dependencies) lists additional formats and integrations:
 ```bash
 uv tool install "markitdown[pdf,docx,pptx,xlsx]"   # add ,youtube-transcription if needed
 echo "# hi" | markitdown                           # smoke test
@@ -180,7 +208,7 @@ The agent name must match the markdown filename exactly (case-sensitive).
   "default_agent": "PowerHous3-god"
 }
 ```
-If the name doesn't match, OpenCode silently falls back to the built-in `build` agent.
+An invalid agent name can prevent startup; use the exact filename stem.
 
 ---
 
@@ -200,7 +228,9 @@ If the agent uses the knowledge graph, goal framing, and bounded memory to answe
 
 ## Enable the hard loop gates (optional, recommended)
 
-The closed learning loop ships with code-enforced guardrails. To activate them in a repo:
+The full kit needs the runtimes and dependencies listed above (Git Bash or WSL on Windows). To use it in another repository, copy `scripts/`, `.githooks/`, `tests/`, `integrations/deepseek-harness/` without `node_modules`, `.opencode/plugins/loop-guardian.js`, `.opencode/plugins/powerhouse.js`, `.opencode/lib/`, and `.opencode/powerhouse.json`. Merge `.opencode/package.json` into an existing package file instead of replacing dependencies, install its dependencies, and adapt the configured checks. Seed project-local `improver/MEMORY.md`, `USER.md`, and `changelog.md`; the gate checks this project store, not the global store.
+
+To activate it:
 
 ```bash
 # 1. Deterministic validator (memory caps, changelog liveness, artifact
@@ -218,9 +248,10 @@ sh scripts/install_hooks.sh                  # preferred
 # 3. loop-guardian plugin auto-loads from .opencode/plugins/ in any OpenCode
 #    session started in this repo (no config entry needed — local plugin dirs
 #    are auto-loaded). It echoes violations on the first bash call and appends
-#    a deterministic record to improver/session-log.md on session idle.
+#    a record per session with new bash activity to improver/session-log.md
+#    on idle/deletion. Duplicate idle events do not duplicate records.
 
-# 4. Run the test suite (zero external deps: python unittest + node --test + sh).
+# 4. Run the test suite after the npm installs above.
 sh tests/run_all.sh
 ```
 
@@ -236,6 +267,11 @@ Severity model (so the gate is safe to wire without deadlocking a fresh clone):
 Notes:
 - The pre-commit hook evaluates the **staged index**, not the working tree, so
   over-cap content cannot be slipped past by shrinking the file after `git add`.
+- Memory limits count Unicode code points with line endings normalized to LF.
+  Staged changelog liveness uses the last commit timestamp, or the current time
+  when a changelog change is staged; touching the worktree cannot bypass it.
+- `--check` verifies executable hook files as well as `core.hooksPath`.
+  Installation reports a failed smoke test with a nonzero exit status.
 - Graph drift sets `graphify-out/.needs_update`; the next clean run (post-commit
   or `python3 scripts/loop_check.py`) **clears it automatically** once sources
   are no longer newer than `graph.json`.
@@ -244,4 +280,3 @@ Notes:
   rather than blocking all work.
 - `improver/session-log.md` is machine-local (gitignored) and is excluded from
   drift detection so it never latches the graph stale.
-

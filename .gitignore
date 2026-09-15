@@ -1,14 +1,32 @@
-# Machine-local artifacts (created by graphify install / local runs)
-# .opencode: ignore everything EXCEPT our first-party plugin + module marker
+# OpenCode: keep first-party plugins, helpers, configuration and lockfile
 # (graphify.js itself is vendor-managed — recreated by `graphify install --platform opencode`)
 .opencode/*
 !.opencode/plugins/
 .opencode/plugins/*
 !.opencode/plugins/loop-guardian.js
+!.opencode/plugins/powerhouse.js
 !.opencode/package.json
+!.opencode/package-lock.json
+!.opencode/.gitignore
+!.opencode/powerhouse.json
+!.opencode/lib/
+.opencode/lib/*
+!.opencode/lib/loop-guardian.mjs
+!.opencode/lib/powerhouse-*.mjs
+!.opencode/PROJECT.md
+
+# Machine-local state: task journals, check logs, Harness sessions and credentials
+.opencode/powerhouse/
 graphify-out/
 .ua/
 pending/
+
+# Local environment files; keep documented configuration templates
+.env
+.env.*
+!.env.example
+!.env.sample
+!.env.template
 
 # OS / editor noise
 .DS_Store
@@ -20,6 +38,7 @@ Thumbs.db
 node_modules/
 __pycache__/
 *.pyc
+npm-debug.log*
 
 # Loop-guardian runtime log (machine-appended, per-machine)
 improver/session-log.md

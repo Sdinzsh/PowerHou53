@@ -12,7 +12,7 @@ PowerHous3 ships with three meta-agents that share the Powerhouse 3 Universal Pr
 
 All meta-agents share: `read: allow`, `glob: allow`, `grep: allow`, `webfetch: allow`, `websearch: allow`, `task: allow`, plus `external_directory: { "~/.config/opencode/**": allow }` so the improver memory store and skills library are readable/writable from any project worktree without approval stalls.
 
-Sub-agents (backend, frontend, general, testing, explore, hermes) have no `task` rule — OpenCode denies `task` for subagents unless explicitly permitted, which enforces the no-re-delegation design. Sub-agent bash uses a **patterned allowlist** (read-only inspection: `ls`, `cat`, `grep`/`rg`, `git status|log|diff|show|branch`) with everything else still `ask` — this removes constant approval stalls during autonomous runs without granting blanket shell access. Loosen per project as needed via `.opencode/agents/<name>.md` overrides (e.g. `"npm test*": "allow"`). GOD/MAX meta-agents (`bash: allow`) run privileged commands themselves instead of delegating them. `explore` additionally enforces its read-only charter with `edit: deny` and only read-only bash patterns allowed.
+All six sub-agents explicitly set `permission.task: {"*": deny}`. Backend, frontend, general and testing use inspection command allowlists; branch mutation falls through to `ask`. Hermes uses `bash: ask`; explore uses a narrower graph/git inspection allowlist plus `edit: deny`. Shell patterns are convenience rules, not a guarantee that every possible argument is read-only (for example, git output flags can write files). Review commands against the agent charter. Project overrides belong in `.opencode/agents/<name>.md`.
 
 Per OpenCode docs, subagent sessions do not inherit a dispatcher's conversation — each Task dispatch builds a fresh context from the task spec plus global rules. That is why memory reads/writes are scoped to primary agents in `AGENTS.md`: parallel subagents appending to shared improver logs would race and duplicate entries.
 
@@ -20,7 +20,7 @@ Per OpenCode docs, subagent sessions do not inherit a dispatcher's conversation 
 
 - **PowerHous3-GOD** — Fast autonomous action. Configuring tools, installing packages, writing/editing files, running services, cleaning up. Stop-only on user interrupt.
 - **PowerHous3-MAX** — Same power as GOD but as a high-power orchestrator for complex multi-step tasks.
-- **PowerHous3** — Ask-first mode. Every shell command that isn't read-only triggers a confirmation. Better for supervised work or less-trusted contexts.
+- **PowerHous3** — Ask-first mode. Every shell command triggers a confirmation; native read/search tools remain allowed.
 
 ## Operating Rules for `PowerHous3` (5 Rules)
 

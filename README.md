@@ -1,6 +1,37 @@
 # PowerHous3 Architecture for OpenCode
 
-PowerHous3 is an enterprise-grade, **Closed Learning Loop** AI architecture built for [OpenCode](https://opencode.ai). Inspired by the NousResearch Hermes Agent and powered by **Understand-Anything** and **Graphify**, it evolves static coding agents into a self-improving, memory-bounded, multi-agent cognitive architecture.
+PowerHous3 is an agent configuration and workflow toolkit for [OpenCode](https://opencode.ai). It combines bounded memory conventions, specialist agent definitions, skills, and optional project-local commit gates. Graphify and Understand-Anything are external integrations; a background learning service or Curator daemon is not included.
+
+## DeepSeek Harness integration
+
+The project-local Powerhouse plugin adds working task persistence and an official
+[DeepSeek Harness SDK](https://github.com/deepseek-ai/deepseek-harness/tree/master/packages/sdk/client)
+bridge:
+
+| OpenCode tool | Capability |
+| --- | --- |
+| `powerhouse_task` | Durable objectives, acceptance criteria, checkpoints, blockers and revision-checked updates |
+| `powerhouse_verify` | Runs configured checks; records real exits and fingerprints workspace contents before accepting completion |
+| `powerhouse_harness` | Launches the full Harness SDK runtime for a bounded delegated task, with separate session storage and cancellation |
+
+Saved task context is restored after restart and included in OpenCode compaction.
+Edits invalidate verification evidence. The Harness runtime supplies its own
+tools, compaction and goal capabilities; parent completion still requires local
+verification. See the [setup and usage guide](integrations/deepseek-harness/README.md).
+
+Token-efficient defaults keep routine recovery to 1,200 characters, successful
+check previews to 800, and Harness reports to 6,000. Full task records and retained
+diagnostics are available on demand. Verified lessons and skill improvements are
+recorded once, without extra per-turn background model calls.
+
+```bash
+npm ci --prefix .opencode
+npm ci --prefix integrations/deepseek-harness
+bash tests/run_all.sh
+```
+
+Restart OpenCode in this checkout to load the plugin. Harness model calls require
+a configured provider credential; native task tracking and checks work without one.
 
 ---
 
@@ -64,7 +95,8 @@ Execution & Verification (AST Navigation + Web/Playwright Validation)
 Session-End Reflection (batched logging + save-result ──► LESSONS.md; Curator convention: telemetry → stale → archived)
    │                ▲ deterministic session-log.md append (plugin; no LLM discipline needed)
    ▼
-Commit Gate (pre-commit: loop_check.py BLOCKS cap overflow / missing artifacts / dead changelog;
+Commit Gate (pre-commit: loop_check.py BLOCKS cap overflow / missing memory files;
+             graph artifacts and stale changelog warn by default;
              post-commit: marks graph drift for the next --update)
 ```
 
@@ -111,7 +143,8 @@ PowerHou53/
 │   │                                changelog liveness, artifact presence, drift
 │   │                                (--staged evaluates the index; --check reports wiring)
 │   └── install_hooks.sh           ← Idempotent hook activator (wire + chmod + smoke-test)
-├── tests/                         ← Zero-dependency suite (python unittest + node --test + shell)
+├── integrations/deepseek-harness/ ← Official SDK bridge, pinned dependencies and setup guide
+├── tests/                         ← Python, Node, SDK-runtime and Git-hook tests
 │   ├── test_loop_check.py         ←   Gate behaviour, staged-bypass regression, glob matcher
 │   ├── test_loop_guardian.mjs     ←   Plugin escaping, symlink guard, session-log append
 │   ├── integration_hooks.sh       ←   Real git-commit gate e2e
@@ -120,9 +153,10 @@ PowerHou53/
 │   ├── pre-commit                 ←   HARD gate on the STAGED index (exit 1); degrades if no python
 │   └── post-commit                ←   Sets/clears knowledge-graph drift (.needs_update)
 └── .opencode/
-    ├── package.json               ← ESM module marker for the first-party plugin
-    └── plugins/loop-guardian.js   ← First-bash violation echo (shell-escaped) + deterministic
-                                     session.idle appends to improver/session-log.md
+    ├── package.json               ← ESM and pinned OpenCode plugin dependency
+    ├── powerhouse.json            ← Verification commands and Harness settings
+    ├── plugins/                   ← Loop guardian and Powerhouse plugin factories
+    └── lib/                       ← Audits, durable task state, checks and SDK routing
 ```
 
 **Generated at runtime (gitignored, per-machine):** `graphify-out/`
@@ -134,7 +168,11 @@ PowerHou53/
 
 ## 🚀 Cross-Platform Installation
 
-PowerHous3 is fully cross-platform (Linux, macOS, Windows PowerShell).
+The configuration kit can be copied on Linux, macOS, and Windows PowerShell.
+The full tests need Python 3.10+, Node.js 22.19+ (22.x) or 24+, Git, installed npm dependencies, and a POSIX shell
+(Git Bash or WSL on Windows). Runtime verification for this revision was on Linux.
+Back up existing agent/skill customizations before replacing them. The commands
+below preserve existing improver files.
 
 ### Linux & macOS
 ```bash
@@ -142,7 +180,11 @@ mkdir -p ~/.config/opencode/agents ~/.config/opencode/improver ~/.config/opencod
 
 cp ./AGENTS.md   ~/.config/opencode/AGENTS.md
 cp -r ./agents/* ~/.config/opencode/agents/
-cp -r ./improver/* ~/.config/opencode/improver/
+# Seed missing memory files; preserve existing session history on upgrades.
+for source in ./improver/*.md; do
+  destination="$HOME/.config/opencode/improver/${source##*/}"
+  if [ ! -e "$destination" ]; then cp "$source" "$destination"; fi
+done
 cp -r ./skills/* ~/.config/opencode/skills/
 ```
 
@@ -154,7 +196,10 @@ New-Item -ItemType Directory -Path "$env:USERPROFILE\.config\opencode\skills" -F
 
 Copy-Item -Path ".\AGENTS.md"  -Destination "$env:USERPROFILE\.config\opencode\AGENTS.md" -Force
 Copy-Item -Path ".\agents\*" -Destination "$env:USERPROFILE\.config\opencode\agents\" -Force -Recurse
-Copy-Item -Path ".\improver\*" -Destination "$env:USERPROFILE\.config\opencode\improver\" -Force -Recurse
+Get-ChildItem ".\improver\*.md" | ForEach-Object {
+  $destination = Join-Path "$env:USERPROFILE\.config\opencode\improver" $_.Name
+  if (-not (Test-Path $destination)) { Copy-Item $_.FullName $destination }
+}
 Copy-Item -Path ".\skills\*" -Destination "$env:USERPROFILE\.config\opencode\skills\" -Force -Recurse
 ```
 
@@ -166,7 +211,7 @@ The agent name must match the markdown filename exactly (case-sensitive).
   "default_agent": "PowerHous3-god"
 }
 ```
-If the name doesn't match, OpenCode silently falls back to the built-in `build` agent.
+An invalid agent name can prevent startup; use the exact filename stem.
 
 ---
 
@@ -189,7 +234,7 @@ graphify install --platform opencode   # registers vendor skill + query-first pl
 uv tool install "markitdown[pdf,docx,pptx,xlsx]"   # add ,youtube-transcription if needed
 echo "# smoke test" | markitdown
 ```
-⚠️ Avoid `'markitdown[all]'` for now — its `youtube-transcript-api~=1.0.0` pin is unsatisfiable on PyPI ([microsoft/markitdown#2179](https://github.com/microsoft/markitdown/pull/2179)). Install format extras individually.
+Install the format extras you need; see the [MarkItDown documentation](https://github.com/microsoft/markitdown#optional-dependencies) for optional OCR, audio, and cloud integrations.
 
 ### 3. Playwright / agent-browser — Browser Automation
 The `playwright` skill drives Vercel's native Rust CLI:
@@ -227,10 +272,8 @@ PowerHous3's safety posture comes from layered design rather than a single gate:
 - **Hard loop gates** — `scripts/loop_check.py` runs as a pre-commit hook (activate with `sh scripts/install_hooks.sh`, which sets `core.hooksPath=.githooks`). It evaluates the **staged index** (not the working tree), so content cannot be slipped past by shrinking a file after `git add`. Severity model:
   - **Hard (blocks the commit):** memory-cap overflow and missing `MEMORY.md`/`USER.md`/`changelog.md` — these are committed files, the core invariant.
   - **Warning by default (bootstrap-safe):** missing `graph.json`/`LESSONS.md` (per-machine, gitignored), stale changelog (mtime is unreliable across clones), and knowledge-graph drift. Promote any of these to hard with `--require-graph`, `--strict-changelog`, or `--strict-stale`.
-  - `.githooks/post-commit` **sets *and clears*** the graph-drift latch (`graphify-out/.needs_update`); the `loop-guardian` plugin (`.opencode/plugins/`, auto-loaded) echoes violations (shell-escaped) on the session's first bash call and appends one deterministic record to `improver/session-log.md` on session idle.
+  - `.githooks/post-commit` **sets and clears** the graph-drift latch (`graphify-out/.needs_update`). The plugin audits each session's first bash call and emits warnings to stderr. On idle/deletion it logs that session's cumulative bash count and current findings; duplicate idle events add no record until new bash activity occurs. Its utilities live in `.opencode/lib/` because OpenCode loads every entry-point export as a plugin factory ([plugin contract](https://opencode.ai/docs/plugins/#create-a-plugin)).
   - Bypass a single commit explicitly with `LOOP_CHECK_SKIP=1 git commit …` (visible in env, unlike `--no-verify`). If no Python interpreter is present the hook warns and allows the commit rather than blocking all work.
 
 ---
 *See [`INSTALL.md`](INSTALL.md) for detailed verification commands, sample prompts, and operator guides.*
-
-

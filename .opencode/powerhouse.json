@@ -1,0 +1,23 @@
+{
+  "version": 1,
+  "contextChars": 1200,
+  "compactionChars": 4000,
+  "successOutputChars": 800,
+  "failureOutputChars": 4000,
+  "checks": {
+    "suite": {
+      "command": "bash",
+      "args": ["tests/run_all.sh"],
+      "timeoutMs": 120000
+    }
+  },
+  "harness": {
+    "enabled": true,
+    "profile": "sdk",
+    "provider": "deepseek-official",
+    "model": "deepseek-v4-flash",
+    "timeoutMs": 300000,
+    "maxTokens": 8192,
+    "responseChars": 6000
+  }
+}

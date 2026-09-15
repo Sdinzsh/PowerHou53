@@ -78,7 +78,7 @@ Classify topic status:
 Create or update the skill with standard file operations (write/edit). Patch with small diffs when adding edge cases; full rewrite only for structural refactors.
 
 **Standard `SKILL.md` Structure:**
-```markdown
+````markdown
 ---
 name: <skill-name>
 description: <1-2 sentence description for the index>
@@ -107,14 +107,14 @@ metadata:
 
 ## Verification
 - <Command to verify success>
-```
+````
 
 ---
 
 ## Telemetry & Curator Integration
 
 - Record `provenance: agent-created` and status in each skill's `metadata` map.
-- Maintain view/patch/last-used telemetry rows in `~/.config/opencode/improver/skills.md` so the Curator convention can manage lifecycle transitions (`active` → `stale` → `archived`).
+- Return view/patch/last-used telemetry to the dispatcher; only the primary agent writes shared `improver/skills.md` rows for the manual Curator convention (`active` → `stale` → `archived`).
 - When consolidating multiple micro-skills into an umbrella skill, fold their detail into `references/` files before archiving the originals.
 
 ---

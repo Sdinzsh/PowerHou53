@@ -10,7 +10,8 @@
 #   4. LOOP_CHECK_SKIP=1 lets an explicit override through
 #
 # Exit 0 = all assertions pass. Any failure prints [FAIL] and exits 1.
-set -u
+set -eu
+unset LOOP_CHECK_SKIP
 
 SRC=$(CDPATH= cd "$(dirname "$0")/.." && pwd)
 TMP=$(mktemp -d "${TMPDIR:-/tmp}/ph3-hooks.XXXXXX")
@@ -37,6 +38,8 @@ cd "$TMP" || { echo "cannot cd fixture"; exit 2; }
 git init -q
 git config user.email t@t
 git config user.name t
+git config commit.gpgsign false
+git config core.hooksPath .git/hooks
 git add -A
 git commit -q -m init
 
@@ -84,6 +87,26 @@ if LOOP_CHECK_SKIP=1 git commit -q -m "explicit override" 2>/dev/null; then
   fi
 else
   fail "LOOP_CHECK_SKIP=1 did not bypass the gate"
+fi
+
+# --- 5. installation checks must not report false success --------------
+chmod -x .githooks/pre-commit
+if sh scripts/install_hooks.sh --check >/dev/null 2>&1; then
+  fail "--check accepted a non-executable hook"
+else
+  pass "--check rejects a non-executable hook"
+fi
+chmod +x .githooks/pre-commit
+if sh scripts/install_hooks.sh --typo >/dev/null 2>&1; then
+  fail "installer silently accepted an unknown option"
+else
+  pass "installer rejects unknown options"
+fi
+awk 'BEGIN{for(i=0;i<5000;i++)printf "X"}' > improver/MEMORY.md
+if sh scripts/install_hooks.sh >/dev/null 2>&1; then
+  fail "installer reported success despite a failing gate"
+else
+  pass "installer returns failure when the gate smoke test fails"
 fi
 
 echo "------------------------------------------------------------"

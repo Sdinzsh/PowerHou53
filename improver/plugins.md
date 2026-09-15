@@ -54,3 +54,10 @@ This file tracks MCP server plugins configured in `opencode.json`. Update this f
 - **Auth**: none (fs-only)
 - **Status**: enabled
 - **Notes**: makes session-end logging and drift surfacing mechanical instead of convention-driven; violations mirror what pre-commit blocks on.
+
+## 2026-09-15 — Powerhouse + DeepSeek Harness
+- **Type**: project-local OpenCode plugin `.opencode/plugins/powerhouse.js`; official SDK bridge in `integrations/deepseek-harness/`.
+- **Tools**: `powerhouse_task`, `powerhouse_verify`, `powerhouse_harness`; bounded checkpoint recovery through system/compaction hooks.
+- **Versions**: @opencode-ai/plugin 1.18.30; @deepseek-ai/dsh-sdk-client 0.1.5-rc.2, both locked.
+- **Auth**: native tools require none; live delegation needs a configured Harness provider (default DEEPSEEK_API_KEY).
+- **Status**: implemented and locally tested; restart OpenCode in this checkout to discover. Full Harness runtime tested with local dummy-key provider; real OpenCode 1.18.29 discovery passed. No global installation changed.

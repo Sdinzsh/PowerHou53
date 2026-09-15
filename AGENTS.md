@@ -47,12 +47,21 @@ The protocol is **proportional**: full ceremony only for non-trivial work.
 6. **Log once**: memory/changelog appends happen at session end in one
    batched write — not after each action (exception: critical incidents).
 
+### Token Economy & Learning
+- Use one delegation route per subtask; handle small work directly.
+- Read relevant ranges/skills; expand summaries or saved logs when needed for
+  correctness. Reuse verified lessons; save non-obvious lessons/corrections once,
+  or patch an existing skill. Skip duplicate/routine notes and per-turn LLM reviews.
+- Keep PROJECT.md to structure, stack, active work and key decisions; update at
+  milestones. Detailed history belongs in changelog.md, read on demand.
+
 ### Think Before Act (non-trivial actions only)
 Triggers: multi-file edits, architecture changes, installs, deletions,
 anything hard to reverse.
 1. **Analyze & Hypothesize** — intent, system state, root causes.
-2. **Consult Prior Knowledge** — read `improver/MEMORY.md`, `USER.md`,
-   `knowledge.md`; query the Knowledge Graph (`.ua/knowledge-graph.json` or
+2. **Consult Prior Knowledge** — reuse the session's `MEMORY.md`/`USER.md`
+   snapshot and relevant `knowledge.md` sections; query an existing Knowledge Graph
+   for structural questions only (`.ua/knowledge-graph.json` or
    `graphify-out/graph.json`) via `graphify query|path|explain` /
    `/understand-chat` BEFORE raw file sweeps. Distinguish edge provenance:
    `EXTRACTED` (syntax fact) / `INFERRED` (semantic hypothesis) / `AMBIGUOUS`.
@@ -61,11 +70,8 @@ anything hard to reverse.
    BEFORE executing.
 
 ### Goal-Oriented Framing
-Structure every task around four pillars:
-- **Goal** — ultimate objective + definition of done.
-- **Task** — concrete, measurable steps.
-- **Context** — user domain, environment, active dependencies.
-- **Constraints** — token budget, permissions, style, architectural limits.
+For substantive tasks identify the objective/done criteria, measurable steps,
+environment/dependencies, and budget/permission/architecture constraints.
 
 ### Web & Browser Stack
 Static content → `webfetch`/curl. Dynamic pages, forms, logins, visual QA →
@@ -105,8 +111,10 @@ Create/patch skills by editing `SKILL.md` directly (small diffs over full
 rewrites); register new skills in `improver/skills.md`.
 
 ### Session Start / End (role-scoped)
-- **Primary/meta agents**: at start, batch-read `MEMORY.md`, `USER.md`,
-  `knowledge.md` (+ latest `changelog.md` entries) in ONE parallel turn.
+- **Primary/meta agents**: once per session, batch-read bounded `MEMORY.md` and
+  `USER.md`, relevant `knowledge.md` search hits and at most 40 recent changelog
+  lines. Read a matching knowledge section in full when needed; do not load entire
+  growing history files. Reuse this snapshot throughout the session.
   Load `plugins.md` / `skills.md` / `token-audit.md` only when relevant to
   the task. Restore project context from `.opencode/PROJECT.md` if present.
 - **Sub-agents**: skip bulk memory reads — work from the enriched task spec

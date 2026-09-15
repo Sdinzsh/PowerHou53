@@ -102,3 +102,28 @@ Root causes addressed (ceremony tax, approval stalls, step exhaustion, over-dele
 - **Skills System Overhaul**: `agentskills.io` standard with YAML frontmatter, 3-level progressive disclosure (L0 Index / L1 Procedure / L2 Reference), and `skill_manage` tool actions (`create`/`patch`/`edit`/`delete`/`write_file`).
 - **Safety & Quality Gates**: Configured `memory.write_approval`, `skills.write_approval` staging gates, and `skills.guard_agent_created` heuristic scanner.
 - **Curator Lifecycle**: `active` → `stale` (30d) → `archived` (90d, to `skills/.archive/`) with pinning protection.
+
+## 2026-09-14 — Project review and logic repairs
+- Fixed OpenCode startup: plugin entry point now exports only the factory; test helpers and implementation moved to `.opencode/lib/loop-guardian.mjs` and included in the repository allowlist.
+- Isolated audit/log state by session ID, handled resumed sessions and idle/status/deletion events, retried failed idle writes, refreshed findings at log time, and sent notices to stderr without changing command output/status.
+- Aligned Unicode/CRLF bounds; rejected non-file bounded stores; checked changelog presence/liveness in the plugin. Staged changelog liveness now uses Git timestamps/staged changes rather than worktree mtime.
+- Expanded drift detection to hooks/tests/helper modules, supported deleted sources via the optional extraction manifest, and corrected Git filename handling and graph refresh instructions.
+- Hook checks require executable files; installer rejects bad arguments and failed smoke tests; Python selection requires 3.10+. Test runner fails when Node is missing and uses explicit unittest discovery. Integration fixtures isolate signing and skip settings.
+- Narrowed specialist shell command prefixes and branch-list permissions; corrected Hermes shared-log ownership, graph-query/routing contradictions, nested Markdown fences, browser examples, and installation commands that overwrote memory history.
+- Verification: `bash tests/run_all.sh` passed twice consecutively (27 Python tests, 18 JavaScript tests, 8 hook assertions); direct Node runs confirmed all 18 named tests. Python/JS/shell syntax checks, 9 agent + 6 skill frontmatter validation, `git diff --check`, and a missing-Node failure-path check passed.
+- Limits: Linux verification only; no live model session or external integration exercised. Optional hooks remain unwired, generated graph remains stale per the no-unsolicited-rebuild rule, and the pre-existing CI workflow deletion is preserved. Source changes are not installed globally.
+
+## 2026-09-15 — DeepSeek Harness integration finalized
+- Researched official Harness SDK, goal/compaction architecture, published runtime source and OpenCode plugin/tool contracts. Completed the existing unfinished task-state/process helpers and SDK dependency scaffold.
+- Added the Powerhouse plugin: durable revision-checked task journals, bounded checkpoint recovery, configured check execution with OpenCode permissions, content-based evidence invalidation, and completion gating. Added session-operation exclusion, failed-rerun proof clearing and worktree-root handling.
+- Added an optional lazy official SDK bridge using the full `sdk` profile, per-parent homes, bounded timeout/output, cancellation cleanup, and rejection of empty/error/token-limited turns. Kept Harness child permissions separate and documented the boundary.
+- Added configuration, pinned lockfiles, ignore rules, setup/usage/rollback documentation and executable tests. Preserved unrelated existing edits and the pre-existing CI deletion; no global configuration or credential changes.
+- Validation: `bash tests/run_all.sh` passed twice consecutively after final code changes: 27 Python tests, 38 Node tests (including full Harness runtime with local HTTP model fixture), and 8 Git-hook assertions. `node --test tests/integration_opencode.mjs` passed actual discovery of all three tools with OpenCode 1.18.29. Dependency inspection, JS/shell syntax checks and `git diff --check` passed. Node 26.8.2 / Linux.
+- Limits: no paid model call or live coding-quality benchmark; runtime fixture uses isolated storage and a dummy key. Real delegation requires provider credentials. No automatic OpenCode continuation is enabled.
+
+## 2026-09-15 — Token efficiency with preserved learning
+- Added compact task replies and status detail retrieval; removed opaque proof metadata from model context and completed tasks from routine recovery. Kept full journal data and completion checks.
+- Set routine/compaction context caps to 1,200/4,000 chars, success/failure previews to 800/4,000, and Harness previews to 6,000. Larger retained outputs are available via private files. Full SDK profile and 8,192 model output cap are unchanged.
+- Trimmed meta-agent prompts, narrowed startup history retrieval, discouraged redundant delegation/status calls, and retained one useful verified memory/skill improvement per meaningful outcome. Corrected unsupported historic token-saving multipliers.
+- Measured representative recovery text down 52% and checkpoint replies down 86% by characters. Not a billed-token or model-quality benchmark.
+- Verified: full suite passed (27 Python tests, 42 Node tests, 8 hook assertions), actual OpenCode tool discovery passed, config JSON/agent YAML and whitespace checks passed. Added tests for retained details, preview bounds, compaction, log retrieval and completion integrity.

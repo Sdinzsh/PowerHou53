@@ -42,5 +42,11 @@ Skills are created/patched by editing their `SKILL.md` directly (small diffs pre
 ### Curator Lifecycle Rules
 - Skills unused for 30 days → `stale` (still loadable, flagged for review)
 - Skills unused for 90 days → `archived` (moved to `skills/.archive/`, recoverable)
-- Pinned skills (`skills pin <name>`) exempt from lifecycle transitions
-- Bundled and hub-installed skills exempt from Curator unless `prune_builtins: true`
+- Pinned skills (set `status: pinned` in this registry) are exempt from lifecycle transitions.
+- Bundled and hub-installed skills are exempt unless explicitly selected for pruning.
+- These are manual conventions; no `skills pin` CLI or Curator daemon ships in this repository.
+
+## 2026-09-14 — Documentation patches
+- `playwright`: corrected fill and screenshot argument examples against installed CLI help; browser workflows were not executed.
+- `sample-skill`: replaced a shell-redirection placeholder with a valid example folder name.
+- `markitdown`: distinguished document indexing through the Graphify skill from the CLI's code-only update command.

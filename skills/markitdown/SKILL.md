@@ -83,12 +83,12 @@ result = md.convert("multimodal-spec.pdf")
 Once files are converted to Markdown:
 1. Place the generated `.md` files in your project's `docs/` or `improver/` directory.
 2. Run Graphify / Understand-Anything indexing:
-   ```bash
-   graphify update
-   # or
+   ```text
+   /graphify . --update
+   # or, when the external Understand-Anything commands are installed:
    /understand
    ```
-3. The engine connects the markdown concepts to underlying source code via `INFERRED` semantic edges.
+3. The engine connects markdown concepts to source code through semantic extraction. The shell command `graphify update .` only updates code extraction; use the skill workflow above when indexing documents.
 
 ---
 

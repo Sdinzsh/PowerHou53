@@ -19,14 +19,15 @@ CHECK="$ROOT/scripts/loop_check.py"
 
 PY=""
 for cand in python3 python py; do
-  if command -v "$cand" >/dev/null 2>&1; then
+  if command -v "$cand" >/dev/null 2>&1 &&
+     "$cand" -c 'import sys; sys.exit(sys.version_info < (3, 10))' >/dev/null 2>&1; then
     PY="$cand"
     break
   fi
 done
 
 if [ -z "$PY" ]; then
-  echo "[pre-commit] WARNING: no Python interpreter found; skipping loop-check." >&2
+  echo "[pre-commit] WARNING: Python 3.10+ not found; skipping loop-check." >&2
   exit 0
 fi
 

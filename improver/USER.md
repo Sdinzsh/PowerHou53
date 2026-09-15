@@ -1,5 +1,5 @@
 # Dialectic User Profile (USER.md)
-<!-- HARD BOUND: 1,375 characters (~500 tokens). Overflow forces inline consolidation. -->
+<!-- HARD BOUND: 1,375 characters (~350 tokens). Overflow forces inline consolidation. -->
 
 ## User Preferences & Profile
 - **Role**: Power User & OpenCode AI System Developer

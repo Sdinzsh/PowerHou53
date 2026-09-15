@@ -50,6 +50,8 @@ class Fixture:
         run_git(self.dir, "init", "-q")
         run_git(self.dir, "config", "user.email", "t@t")
         run_git(self.dir, "config", "user.name", "t")
+        run_git(self.dir, "config", "commit.gpgsign", "false")
+        run_git(self.dir, "config", "core.hooksPath", ".git/hooks")
         run_git(self.dir, "add", "-A")
         run_git(self.dir, "commit", "-q", "-m", "init")
 
@@ -63,6 +65,7 @@ class Fixture:
 
     def run(self, *args: str, env_extra=None) -> tuple[int, dict, str]:
         env = os.environ.copy()
+        env.pop("LOOP_CHECK_SKIP", None)
         if env_extra:
             env.update(env_extra)
         r = subprocess.run(
@@ -259,9 +262,91 @@ class LoopCheckTests(unittest.TestCase):
         self.assertEqual(code, 1)               # not wired yet
         self.assertFalse(out["hooks_wired"])
         run_git(f.dir, "config", "core.hooksPath", ".githooks")
+        # A config value without actual executable hooks is not enforcement.
+        code_missing, out_missing, _ = f.run("--check")
+        self.assertEqual(code_missing, 1)
+        self.assertFalse(out_missing["hooks_wired"])
+        for name in ("pre-commit", "post-commit"):
+            f.write(f".githooks/{name}", "#!/bin/sh\nexit 0\n")
+            (f.dir / ".githooks" / name).chmod(0o755)
         code2, out2, _ = f.run("--check")
         self.assertEqual(code2, 0)
         self.assertTrue(out2["hooks_wired"])
+
+    def test_memory_directory_fails_without_crashing(self):
+        f = self.mk()
+        memory = f.dir / "improver/MEMORY.md"
+        memory.unlink()
+        memory.mkdir()
+        code, out, _ = f.run()
+        self.assertEqual(code, 1)
+        self.assertTrue(out["violations"])
+
+    def test_memory_symlink_is_not_a_bounded_store(self):
+        f = self.mk()
+        memory = f.dir / "improver/MEMORY.md"
+        memory.unlink()
+        memory.symlink_to("USER.md")
+        run_git(f.dir, "add", "improver/MEMORY.md")
+        for args in ((), ("--staged",)):
+            with self.subTest(args=args):
+                code, out, _ = f.run(*args)
+                self.assertEqual(code, 1)
+                self.assertTrue(out["violations"])
+
+    def test_staged_changelog_ignores_worktree_mtime(self):
+        f = self.mk()
+        old = time.time() - 40 * 86400
+        os.utime(f.dir / "improver/changelog.md", (old, old))
+        code, out, _ = f.run("--staged", "--strict-changelog")
+        self.assertEqual(code, 0, out)
+
+    def test_staged_old_changelog_cannot_be_freshened_by_touch(self):
+        f = self.mk()
+        env = os.environ.copy()
+        env["GIT_COMMITTER_DATE"] = "2020-01-01T00:00:00+00:00"
+        subprocess.run(["git", "-C", str(f.dir), "commit", "--amend", "--no-edit", "-q"],
+                       env=env, check=True, capture_output=True)
+        code, out, _ = f.run("--staged", "--strict-changelog")
+        self.assertEqual(code, 1, out)
+        f.write("improver/changelog.md", "new staged entry\n")
+        run_git(f.dir, "add", "improver/changelog.md")
+        code, out, _ = f.run("--staged", "--strict-changelog")
+        self.assertEqual(code, 0, out)
+
+    def test_unicode_and_crlf_bounds_match_index(self):
+        f = self.mk()
+        f.write("improver/MEMORY.md", "😀" * 2199 + "\r\n")
+        run_git(f.dir, "add", "improver/MEMORY.md")
+        for args in ((), ("--staged",)):
+            code, out, _ = f.run(*args)
+            self.assertEqual(code, 0, out)
+
+    def test_deleted_source_marks_graph_stale(self):
+        f = self.mk()
+        f.write("agents/deleted.md", "source")
+        run_git(f.dir, "add", "agents/deleted.md")
+        graph_time = time.time() + 10000
+        os.utime(f.dir / "graphify-out/graph.json", (graph_time, graph_time))
+        (f.dir / "agents/deleted.md").unlink()
+        code, out, _ = f.run("--strict-stale")
+        self.assertEqual(code, 1, out)
+
+    def test_gitignored_unicode_source_does_not_mark_graph_stale(self):
+        f = self.mk()
+        f.write(".gitignore", "graphify-out/\nskills/日本語.md\n")
+        f.write("skills/日本語.md", "ignored source")
+        future = time.time() + 10000
+        os.utime(f.dir / "skills/日本語.md", (future, future))
+        code, out, _ = f.run("--strict-stale")
+        self.assertEqual(code, 0, out)
+
+    def test_manifest_detects_a_committed_source_deletion(self):
+        f = self.mk()
+        f.write("graphify-out/manifest.json", json.dumps({"agents/deleted.md": {}}))
+        code, out, _ = f.run("--strict-stale")
+        self.assertEqual(code, 1, out)
+        self.assertTrue(any("agents/deleted.md" in v for v in out["violations"]))
 
 
 class MatchUnitTests(unittest.TestCase):

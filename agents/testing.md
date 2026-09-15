@@ -10,19 +10,29 @@ permission:
   edit: allow
   bash:
     "*": ask
-    "ls*": allow
-    "cat*": allow
-    "head*": allow
-    "tail*": allow
-    "wc*": allow
-    "grep*": allow
-    "rg*": allow
-    "tree*": allow
+    "ls": allow
+    "ls *": allow
+    "cat": allow
+    "cat *": allow
+    "head": allow
+    "head *": allow
+    "tail": allow
+    "tail *": allow
+    "wc": allow
+    "wc *": allow
+    "grep": allow
+    "grep *": allow
+    "rg": allow
+    "rg *": allow
+    "tree": allow
+    "tree *": allow
     "git status*": allow
     "git log*": allow
     "git diff*": allow
     "git show*": allow
-    "git branch*": allow
+    "git branch": allow
+    "git branch --list*": allow
+    "git branch --show-current": allow
   read: allow
   glob: allow
   grep: allow

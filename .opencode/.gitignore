@@ -1,0 +1,6 @@
+# Keep these exclusions when the OpenCode kit is copied to another project.
+/node_modules/
+/powerhouse/
+/bun.lock
+/.opencodeignore
+/opencode.json.bak-*

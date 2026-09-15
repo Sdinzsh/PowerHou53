@@ -1,5 +1,5 @@
 #!/bin/sh
-# Run the full PowerHous3 test suite: Python gate + Node plugin + hook e2e.
+# Run the full PowerHous3 suite: Python gate + Node plugins/SDK + hook e2e.
 # Usage:  sh tests/run_all.sh        (from anywhere; resolves repo root itself)
 set -u
 
@@ -12,17 +12,17 @@ for c in python3 python; do command -v "$c" >/dev/null 2>&1 && { PY="$c"; break;
 
 echo "== 1/3 Python gate tests (scripts/loop_check.py) =="
 if [ -n "$PY" ]; then
-  "$PY" -m unittest tests.test_loop_check -v || RC=1
+  "$PY" -m unittest discover -s tests -p 'test_*.py' -v || RC=1
 else
   echo "[skip] no Python interpreter"; RC=1
 fi
 
 echo
-echo "== 2/3 Node plugin tests (.opencode/plugins/loop-guardian.js) =="
+echo "== 2/3 Node plugin and Harness runtime tests =="
 if command -v node >/dev/null 2>&1; then
-  node --test tests/test_loop_guardian.mjs || RC=1
+  node --test tests/test_*.mjs || RC=1
 else
-  echo "[skip] node not found"
+  echo "[FAIL] node not found; plugin suite is required"; RC=1
 fi
 
 echo
